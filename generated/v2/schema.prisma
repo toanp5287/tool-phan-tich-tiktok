@@ -1,0 +1,635 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/v2"
+}
+
+enum VerificationStatus {
+  VERIFIED
+  SUGGESTED
+  NEEDS_REVIEW
+}
+
+enum RelationStatus {
+  CONFIRMED
+  INFERRED
+  PROVISIONAL
+  REJECTED
+}
+
+enum EntityState {
+  LINKED
+  INFERRED
+  PROVISIONAL
+  PARTIALLY_LINKED
+  UNRESOLVED
+  NEEDS_DATA
+}
+
+model DataSource {
+  id               Int               @id @default(autoincrement())
+  code             String            @unique
+  name             String
+  usageRestriction String
+  licenseNote      String?
+  files            DatasetFile[]
+  mappings         CategoryMapping[]
+}
+
+model DatasetFile {
+  id           Int         @id @default(autoincrement())
+  sourceId     Int
+  relativePath String
+  sha256       String
+  format       String
+  recordCount  Int
+  registeredAt DateTime    @default(now())
+  source       DataSource  @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  records      RawRecord[]
+
+  @@unique([sourceId, sha256])
+}
+
+model RawRecord {
+  id                  BigInt                      @id @default(autoincrement())
+  datasetFileId       Int
+  recordNumber        Int
+  payload             Json
+  normalized          Json?
+  issues              Json
+  state               String
+  normalizerVersion   String
+  importedAt          DateTime                    @default(now())
+  file                DatasetFile                 @relation(fields: [datasetFileId], references: [id], onDelete: Restrict)
+  productObservations ProductObservation[]
+  shopObservations    ShopObservation[]
+  channelObservations CreatorChannelObservation[]
+  videoObservations   VideoObservation[]
+  identities          ExternalIdentity[]
+  evidence            RelationEvidence[]
+
+  @@unique([datasetFileId, recordNumber])
+  @@index([state])
+}
+
+model ProcessingRun {
+  id                 Int       @id @default(autoincrement())
+  kind               String
+  status             String
+  parserVersion      String
+  mappingVersion     String
+  startedAt          DateTime  @default(now())
+  finishedAt         DateTime?
+  recordsFound       Int       @default(0)
+  recordsSaved       Int       @default(0)
+  recordsUpdated     Int       @default(0)
+  recordsFailed      Int       @default(0)
+  recordsQuarantined Int       @default(0)
+  errorMessage       String?
+  metadata           Json?
+}
+
+model Category {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  slug              String              @unique
+  subCategories     SubCategory[]
+  mappings          CategoryMapping[]
+  products          ProductCategory[]
+  creators          CreatorCategory[]
+  videos            VideoCategory[]
+  marketGapAnalyses MarketGapAnalysis[]
+}
+
+model SubCategory {
+  id                Int                  @id @default(autoincrement())
+  categoryId        Int
+  name              String
+  slug              String
+  category          Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  thirdLevels       ThirdLevelCategory[]
+  mappings          CategoryMapping[]
+  products          ProductCategory[]
+  marketGapAnalyses MarketGapAnalysis[]
+
+  @@unique([categoryId, name])
+  @@unique([categoryId, slug])
+}
+
+model ThirdLevelCategory {
+  id            Int               @id @default(autoincrement())
+  subCategoryId Int
+  name          String
+  slug          String
+  subCategory   SubCategory       @relation(fields: [subCategoryId], references: [id], onDelete: Restrict)
+  mappings      CategoryMapping[]
+  products      ProductCategory[]
+
+  @@unique([subCategoryId, name])
+  @@unique([subCategoryId, slug])
+}
+
+model CategoryMapping {
+  id                   Int                 @id @default(autoincrement())
+  sourceId             Int
+  sourcePath           String
+  sourceName           String
+  categoryId           Int?
+  subCategoryId        Int?
+  thirdLevelCategoryId Int?
+  verificationStatus   VerificationStatus
+  source               DataSource          @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  category             Category?           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subCategory          SubCategory?        @relation(fields: [subCategoryId], references: [id], onDelete: Restrict)
+  thirdLevel           ThirdLevelCategory? @relation(fields: [thirdLevelCategoryId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceId, sourcePath])
+}
+
+model Product {
+  id               Int                  @id @default(autoincrement())
+  title            String
+  description      String?
+  productUrl       String?
+  imageUrl         String?
+  market           String?
+  currency         String?
+  processingState  EntityState          @default(NEEDS_DATA)
+  lastClassifiedAt DateTime?
+  importedAt       DateTime             @default(now())
+  identities       ExternalIdentity[]
+  variants         ProductVariant[]
+  observations     ProductObservation[]
+  shops            ProductShop[]
+  creators         ProductCreator[]
+  videos           ProductVideo[]
+  categories       ProductCategory[]
+  aiReports        AiAnalysisReport[]
+
+  @@index([market, currency])
+  @@index([title])
+}
+
+model ProductVariant {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  platformSkuId String
+  name          String?
+  attributes    Json
+  price         Decimal? @db.Decimal(20, 4)
+  originalPrice Decimal? @db.Decimal(20, 4)
+  currency      String?
+  stock         Int?
+  isAvailable   Boolean?
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, platformSkuId])
+}
+
+model Shop {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  shopUrl            String?
+  avatarUrl          String?
+  market             String?
+  isSimulated        Boolean            @default(false)
+  simulationKey      String?            @unique
+  simulationMetadata Json?
+  processingState    EntityState        @default(NEEDS_DATA)
+  lastClassifiedAt   DateTime?
+  identities         ExternalIdentity[]
+  observations       ShopObservation[]
+  products           ProductShop[]
+  creators           CreatorShop[]
+
+  @@index([isSimulated])
+}
+
+model Creator {
+  id                 Int                @id @default(autoincrement())
+  displayName        String
+  verificationStatus VerificationStatus
+  isSimulated        Boolean            @default(false)
+  simulationKey      String?            @unique
+  simulationMetadata Json?
+  channels           CreatorChannel[]
+  identities         ExternalIdentity[]
+  products           ProductCreator[]
+  shops              CreatorShop[]
+  categories         CreatorCategory[]
+
+  @@index([isSimulated])
+}
+
+model CreatorChannel {
+  id                 Int                         @id @default(autoincrement())
+  creatorId          Int?
+  platform           String
+  platformUserId     String?
+  username           String?
+  profileUrl         String                      @unique
+  displayName        String?
+  bio                String?
+  avatarUrl          String?
+  market             String?
+  isVerified         Boolean?
+  verificationStatus VerificationStatus
+  processingState    EntityState                 @default(NEEDS_DATA)
+  lastClassifiedAt   DateTime?
+  creator            Creator?                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  observations       CreatorChannelObservation[]
+  videos             Video[]
+  categories         CreatorCategory[]
+  identities         ExternalIdentity[]
+
+  @@unique([platform, platformUserId])
+}
+
+model Video {
+  id               Int                @id @default(autoincrement())
+  channelId        Int?
+  caption          String?
+  postType         String
+  publishedAt      DateTime?
+  durationSeconds  Decimal?           @db.Decimal(12, 3)
+  postUrl          String?
+  coverUrl         String?
+  market           String?
+  hashtags         String[]
+  processingState  EntityState        @default(NEEDS_DATA)
+  lastClassifiedAt DateTime?
+  channel          CreatorChannel?    @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  identities       ExternalIdentity[]
+  observations     VideoObservation[]
+  products         ProductVideo[]
+  categories       VideoCategory[]
+
+  @@index([publishedAt])
+}
+
+model ExternalIdentity {
+  id                 Int                @id @default(autoincrement())
+  namespace          String
+  externalId         String
+  productId          Int?
+  shopId             Int?
+  creatorId          Int?
+  channelId          Int?
+  videoId            Int?
+  rawRecordId        BigInt
+  verificationStatus VerificationStatus
+  product            Product?           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  shop               Shop?              @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  creator            Creator?           @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  channel            CreatorChannel?    @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  video              Video?             @relation(fields: [videoId], references: [id], onDelete: Restrict)
+  record             RawRecord          @relation(fields: [rawRecordId], references: [id], onDelete: Restrict)
+
+  @@unique([namespace, externalId])
+}
+
+model ProductShop {
+  id                 Int                @id @default(autoincrement())
+  productId          Int
+  shopId             Int
+  isActive           Boolean            @default(true)
+  verificationStatus VerificationStatus
+  isSimulated        Boolean            @default(false)
+  simulationMetadata Json?
+  product            Product            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  evidence           RelationEvidence[]
+
+  @@unique([productId, shopId])
+  @@index([isSimulated])
+}
+
+model ProductCreator {
+  id                 Int                @id @default(autoincrement())
+  productId          Int
+  creatorId          Int
+  verificationStatus VerificationStatus
+  isSimulated        Boolean            @default(false)
+  simulationMetadata Json?
+  product            Product            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  creator            Creator            @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  evidence           RelationEvidence[]
+
+  @@unique([productId, creatorId])
+  @@index([isSimulated])
+}
+
+model CreatorShop {
+  id                 Int                @id @default(autoincrement())
+  creatorId          Int
+  shopId             Int
+  verificationStatus VerificationStatus
+  isSimulated        Boolean            @default(false)
+  simulationMetadata Json?
+  creator            Creator            @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  evidence           RelationEvidence[]
+
+  @@unique([creatorId, shopId])
+  @@index([isSimulated])
+}
+
+model ProductVideo {
+  id                 Int                @id @default(autoincrement())
+  productId          Int
+  videoId            Int
+  verificationStatus VerificationStatus
+  product            Product            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  video              Video              @relation(fields: [videoId], references: [id], onDelete: Restrict)
+  evidence           RelationEvidence[]
+
+  @@unique([productId, videoId])
+}
+
+model ProductCategory {
+  id                   Int                 @id @default(autoincrement())
+  productId            Int
+  categoryId           Int
+  subCategoryId        Int?
+  thirdLevelCategoryId Int?
+  isPrimary            Boolean
+  method               String
+  verificationStatus   VerificationStatus
+  status               RelationStatus      @default(CONFIRMED)
+  confidence           Int?
+  reason               String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  product              Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  category             Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subCategory          SubCategory?        @relation(fields: [subCategoryId], references: [id], onDelete: Restrict)
+  thirdLevel           ThirdLevelCategory? @relation(fields: [thirdLevelCategoryId], references: [id], onDelete: Restrict)
+  evidence             RelationEvidence[]
+
+  @@index([categoryId])
+}
+
+model CreatorCategory {
+  id                 Int                @id @default(autoincrement())
+  creatorId          Int?
+  channelId          Int?
+  categoryId         Int
+  method             String
+  verificationStatus VerificationStatus
+  status             RelationStatus     @default(CONFIRMED)
+  confidence         Int?
+  reason             String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  creator            Creator?           @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  channel            CreatorChannel?    @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  category           Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  evidence           RelationEvidence[]
+
+  @@unique([channelId, categoryId])
+}
+
+model VideoCategory {
+  id                 Int                @id @default(autoincrement())
+  videoId            Int
+  categoryId         Int
+  method             String
+  verificationStatus VerificationStatus
+  status             RelationStatus     @default(CONFIRMED)
+  confidence         Int?
+  reason             String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  video              Video              @relation(fields: [videoId], references: [id], onDelete: Restrict)
+  category           Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  evidence           RelationEvidence[]
+
+  @@unique([videoId, categoryId])
+}
+
+model RelationEvidence {
+  id                 BigInt             @id @default(autoincrement())
+  rawRecordId        BigInt
+  productShopId      Int?
+  productCreatorId   Int?
+  creatorShopId      Int?
+  productVideoId     Int?
+  productCategoryId  Int?
+  creatorCategoryId  Int?
+  videoCategoryId    Int?
+  verificationStatus VerificationStatus
+  status             RelationStatus     @default(CONFIRMED)
+  confidence         Int?
+  reason             String?
+  source             String?
+  method             String
+  evidencePath       String
+  explanation        String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  record             RawRecord          @relation(fields: [rawRecordId], references: [id], onDelete: Restrict)
+  productShop        ProductShop?       @relation(fields: [productShopId], references: [id], onDelete: Restrict)
+  productCreator     ProductCreator?    @relation(fields: [productCreatorId], references: [id], onDelete: Restrict)
+  creatorShop        CreatorShop?       @relation(fields: [creatorShopId], references: [id], onDelete: Restrict)
+  productVideo       ProductVideo?      @relation(fields: [productVideoId], references: [id], onDelete: Restrict)
+  productCategory    ProductCategory?   @relation(fields: [productCategoryId], references: [id], onDelete: Restrict)
+  creatorCategory    CreatorCategory?   @relation(fields: [creatorCategoryId], references: [id], onDelete: Restrict)
+  videoCategory      VideoCategory?     @relation(fields: [videoCategoryId], references: [id], onDelete: Restrict)
+
+  @@index([rawRecordId])
+}
+
+model ProductObservation {
+  id            BigInt    @id @default(autoincrement())
+  productId     Int
+  rawRecordId   BigInt
+  observedAt    DateTime?
+  importedAt    DateTime  @default(now())
+  price         Decimal?  @db.Decimal(20, 4)
+  originalPrice Decimal?  @db.Decimal(20, 4)
+  currency      String?
+  soldCount     BigInt?
+  ratingScore   Decimal?  @db.Decimal(4, 2)
+  ratingCount   BigInt?
+  isAvailable   Boolean?
+  quality       Json
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  record        RawRecord @relation(fields: [rawRecordId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, rawRecordId])
+  @@index([productId, observedAt])
+}
+
+model ShopObservation {
+  id            BigInt    @id @default(autoincrement())
+  shopId        Int
+  rawRecordId   BigInt
+  observedAt    DateTime?
+  importedAt    DateTime  @default(now())
+  followerCount BigInt?
+  productCount  Int?
+  ratingScore   Decimal?  @db.Decimal(4, 2)
+  quality       Json
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  record        RawRecord @relation(fields: [rawRecordId], references: [id], onDelete: Restrict)
+
+  @@unique([shopId, rawRecordId])
+}
+
+model CreatorChannelObservation {
+  id            BigInt         @id @default(autoincrement())
+  channelId     Int
+  rawRecordId   BigInt
+  observedAt    DateTime?
+  importedAt    DateTime       @default(now())
+  followerCount BigInt?
+  likeCount     BigInt?
+  viewCount     BigInt?
+  quality       Json
+  channel       CreatorChannel @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  record        RawRecord      @relation(fields: [rawRecordId], references: [id], onDelete: Restrict)
+
+  @@unique([channelId, rawRecordId])
+  @@index([channelId, observedAt])
+}
+
+model VideoObservation {
+  id           BigInt    @id @default(autoincrement())
+  videoId      Int
+  rawRecordId  BigInt
+  observedAt   DateTime?
+  importedAt   DateTime  @default(now())
+  playCount    BigInt?
+  diggCount    BigInt?
+  shareCount   BigInt?
+  commentCount BigInt?
+  collectCount BigInt?
+  quality      Json
+  video        Video     @relation(fields: [videoId], references: [id], onDelete: Restrict)
+  record       RawRecord @relation(fields: [rawRecordId], references: [id], onDelete: Restrict)
+
+  @@unique([videoId, rawRecordId])
+  @@index([videoId, observedAt])
+}
+
+model TargetedShop {
+  id             Int      @id @default(autoincrement())
+  username       String   @unique
+  platformShopId String?
+  displayName    String?
+  category       String?
+  note           String?
+  priority       String   @default("TOP100")
+  isActive       Boolean  @default(true)
+  scrapeConfig   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AiAnalysisReport {
+  id          BigInt    @id @default(autoincrement())
+  productId   Int
+  status      String
+  model       String
+  report      Json?
+  dataQuality Json?
+  requestedAt DateTime  @default(now())
+  completedAt DateTime?
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+model AiUsageCounter {
+  id           Int    @id @default(autoincrement())
+  scope        String
+  bucket       String
+  requestCount Int    @default(0)
+  inputTokens  Int    @default(0)
+  outputTokens Int    @default(0)
+
+  @@unique([scope, bucket])
+}
+
+model CollectionBudget {
+  id             Int    @id @default(autoincrement())
+  provider       String
+  accountKey     String
+  period         String
+  reconciledUsed Int?
+  reserved       Int    @default(0)
+
+  @@unique([provider, accountKey, period])
+}
+
+model MarketGapAnalysis {
+  id             BigInt              @id @default(autoincrement())
+  market         String
+  categoryId     Int
+  subCategoryId  Int?
+  currency       String
+  days           Int
+  mode           String
+  scoringVersion String
+  fingerprint    String              @unique
+  dataWatermark  DateTime?
+  status         String
+  result         Json
+  requestedAt    DateTime            @default(now())
+  completedAt    DateTime?
+  expiresAt      DateTime?
+  category       Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subCategory    SubCategory?        @relation(fields: [subCategoryId], references: [id], onDelete: Restrict)
+  aiReports      MarketGapAiReport[]
+
+  @@index([categoryId, subCategoryId, currency, days])
+  @@index([expiresAt])
+  @@index([requestedAt])
+}
+
+model MarketGapAiReport {
+  id                  BigInt            @id @default(autoincrement())
+  marketGapAnalysisId BigInt
+  nicheKey            String
+  status              String
+  provider            String
+  model               String
+  report              Json?
+  evidenceFingerprint String
+  scoringVersion      String
+  requestedAt         DateTime          @default(now())
+  completedAt         DateTime?
+  inputTokens         Int?
+  outputTokens        Int?
+  reasoningTokens     Int?
+  totalTokens         Int?
+  estimatedCost       Decimal?          @db.Decimal(20, 8)
+  errorCode           String?
+  errorMessage        String?
+  analysis            MarketGapAnalysis @relation(fields: [marketGapAnalysisId], references: [id], onDelete: Restrict)
+
+  @@index([marketGapAnalysisId, nicheKey, requestedAt])
+  @@index([evidenceFingerprint])
+}
+
+model MetricSnapshot {
+  id                 BigInt             @id @default(autoincrement())
+  entityType         String
+  entityId           Int
+  metric             String
+  value              Decimal?           @db.Decimal(30, 4)
+  currency           String?
+  observedAt         DateTime
+  bucketDate         DateTime           @db.Date
+  source             String
+  verificationStatus VerificationStatus
+  confidence         Int?
+  isEstimated        Boolean            @default(false)
+  metadata           Json?
+  createdAt          DateTime           @default(now())
+
+  @@unique([entityType, entityId, metric, bucketDate, source])
+  @@index([entityType, entityId, metric, bucketDate])
+  @@index([bucketDate])
+}

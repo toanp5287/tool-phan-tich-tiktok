@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Danh sách nhà bán hàng TikTok Shop và hiệu suất kinh doanh" />
+    <title>Cửa hàng | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <path d="M9 22V12h6v10" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-name">Danh sách cửa hàng</h1>
+            <p class="brand-sub">Danh sách cửa hàng · sắp xếp toàn bộ trước khi phân trang</p>
+          </div>
+        </div>
+
+
+
+        <div class="row">
+          <time-filter :model-value="rangeKey" @update:model-value="setRange" />
+          <div class="field" style="width: min(260px, 50vw)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input v-model="search" class="input" type="search" placeholder="Tìm shop theo tên hoặc username..." />
+          </div>
+          <select v-model="sortBy" class="select" style="width: auto" aria-label="Sắp xếp shop">
+            <option value="gmv">GMV cao nhất</option>
+            <option value="sales">Lượt bán nhiều nhất</option>
+            <option value="products">Nhiều sản phẩm nhất</option>
+            <option value="recent">Mới cập nhật</option>
+          </select>
+        </div>
+      </header>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Không tải được danh sách shop.</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-left: auto" @click="loadShops">Thử lại</button>
+      </div>
+
+      <section class="grid grid-kpi">
+        <article class="kpi">
+          <div class="kpi-label">Tổng số shop</div>
+          <p class="kpi-value">{{ formatNumber(total) }}</p>
+          <div class="kpi-foot"><span class="muted">đang được theo dõi</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">GMV trang này</div>
+          <p class="kpi-value">{{ formatCurrency(pageGmv, { compact: true }) }}</p>
+          <div class="kpi-foot"><span class="muted">{{ shops.length }} shop hiển thị</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Sản phẩm trang này</div>
+          <p class="kpi-value">{{ formatNumber(pageProducts) }}</p>
+          <div class="kpi-foot"><span class="muted">liên kết sản phẩm – shop</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Shop tăng trưởng mạnh</div>
+          <p class="kpi-value" style="color: var(--positive)">{{ fastestCount }}</p>
+          <div class="kpi-foot"><span class="muted">tăng trưởng &gt; 10% trong kỳ</span></div>
+        </article>
+      </section>
+
+      <section class="glass">
+        <div class="panel-header" style="padding: 20px 22px 0; margin-bottom: 14px">
+          <div>
+            <h2 class="panel-title">Bảng xếp hạng nhà bán hàng</h2>
+            <p class="panel-subtitle">Dữ liệu tổng hợp từ snapshot mới nhất của từng shop ({{ rangeLabel }})</p>
+          </div>
+          <button class="btn btn-icon btn-ghost" :disabled="loading" @click="loadShops" title="Làm mới">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M21 12a9 9 0 1 1-3-6.7" />
+              <path d="M21 3v6h-6" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="table-wrap" style="margin: 0 22px">
+          <table class="data">
+            <thead>
+              <tr>
+                <th style="width: 48px">#</th>
+                <th style="min-width: 240px">Nhà bán hàng</th>
+                <th style="min-width: 230px">3 sản phẩm bán chạy</th>
+                <th class="is-numeric">SP</th>
+                <th class="is-numeric">Đã bán</th>
+                <th class="is-numeric">GMV</th>
+                <th class="is-numeric">Giá TB</th>
+                <th class="is-numeric">Tăng trưởng</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading && shops.length === 0">
+                <td colspan="9"><div class="state"><span class="spinner"></span><span>Đang tải...</span></div></td>
+              </tr>
+              <tr v-else-if="shops.length === 0">
+                <td colspan="9"><div class="state"><span>Chưa có nhà bán hàng nào khớp bộ lọc.</span></div></td>
+              </tr>
+              <tr v-for="(shop, index) in shops" :key="shop.id" class="fade-in">
+                <td>
+                  <span class="rank-badge" :class="{ 'is-top': (page - 1) * pageSize + index < 3 }">
+                    {{ (page - 1) * pageSize + index + 1 }}
+                  </span>
+                </td>
+                <td>
+                  <div class="cell-title">
+                    <div class="avatar avatar-lg">
+                      <img :src="shop.avatarUrl" :alt="shop.name" loading="lazy" data-fallback-kind="avatar" />
+                    </div>
+                    <div style="min-width: 0">
+                      <a class="cell-title-text link-reset" :href="`/shop-detail.html?id=${shop.id}&range=${rangeKey}`">{{ shop.name }}</a>
+                      <div class="muted mono" style="font-size: 10.5px">
+                        {{ shop.username ? "@" + shop.username : "—" }} · cập nhật {{ formatRelative(shop.lastSeenAt) }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="stack" style="gap: 5px; font-size: 11.5px">
+                    <a
+                      v-for="product in shop.topProducts"
+                      :key="product.id"
+                      class="row link-reset"
+                      style="gap: 8px"
+                      :href="`/detail.html?id=${product.id}&range=${rangeKey}`"
+                    >
+                      <span class="truncate" style="max-width: 165px">{{ product.title }}</span>
+                      <span class="muted mono" style="font-size: 10px">{{ formatCompact(product.sales) }}</span>
+                    </a>
+                    <span v-if="!shop.topProducts || shop.topProducts.length === 0" class="muted">—</span>
+                  </div>
+                </td>
+                <td class="is-numeric">{{ formatNumber(shop.productCount) }}</td>
+                <td class="is-numeric">{{ shop.hasSales === false ? '—' : formatNumber(shop.totalSales) }}</td>
+                <td class="is-numeric" style="color: var(--positive); font-weight: 600">
+                  {{ shop.hasGmv === false ? 'Chưa có GMV' : formatCurrency(shop.totalGmv, { compact: true }) }}
+                </td>
+                <td class="is-numeric">{{ formatCurrency(shop.avgPrice) }}</td>
+                <td class="is-numeric">
+                  <span :class="growthClass(shop.growthRate)">{{ growthIcon(shop.growthRate) }} {{ formatPercent(shop.growthRate) }}</span>
+                </td>
+                <td style="text-align: right">
+                  <a class="btn btn-sm" :href="`/shop-detail.html?id=${shop.id}&range=${rangeKey}`">
+                    Xem
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                      <path d="m9 6 6 6-6 6" />
+                    </svg>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row-between" style="padding: 16px 22px 20px">
+          <span class="muted">Trang <span class="cell-strong">{{ page }}</span> / {{ totalPages }}</span>
+          <div class="row">
+            <button class="btn btn-sm btn-ghost" :disabled="page <= 1 || loading" @click="changePage(page - 1)">Trước</button>
+            <button class="btn btn-sm btn-ghost" :disabled="page >= totalPages || loading" @click="changePage(page + 1)">Sau</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="/js/shops.js"></script>
+  </body>
+</html>

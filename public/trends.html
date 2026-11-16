@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Xu hướng video và từ khoá nổi bật trên TikTok Shop" />
+    <title>Xu hướng | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 17l5-6 4 3.5L21 5" />
+              <path d="M15 5h6v6" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-name">Xu hướng &amp; từ khoá</h1>
+            <p class="brand-sub">Tín hiệu tăng trưởng và chủ đề nổi bật trong tuần</p>
+          </div>
+        </div>
+
+
+
+        <div class="row">
+          <time-filter :model-value="rangeKey" @update:model-value="setRange" />
+        </div>
+      </header>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Không tải được dữ liệu xu hướng.</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+      </div>
+
+      <section class="grid grid-kpi">
+        <article class="kpi">
+          <div class="kpi-label">Lượt bán kỳ hiện tại</div>
+          <p class="kpi-value">{{ formatNumber(summary.totalCurrent) }}</p>
+          <div class="kpi-foot"><span class="pill pill-neutral">{{ summary.label }}</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Lượt bán kỳ trước</div>
+          <p class="kpi-value">{{ formatNumber(summary.totalPrevious) }}</p>
+          <div class="kpi-foot"><span class="muted">so sánh cùng độ dài kỳ</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Tăng trưởng</div>
+          <p class="kpi-value" :style="{ color: summary.growthRate >= 0 ? 'var(--positive)' : 'var(--negative)' }">
+            {{ formatPercent(summary.growthRate, { sign: true }) }}
+          </p>
+          <div class="kpi-foot"><span class="muted">thay đổi lượt bán</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Video xu hướng ghi nhận</div>
+          <p class="kpi-value">{{ formatNumber(totalTrends) }}</p>
+          <div class="kpi-foot"><span class="muted">tổng mẫu trong hệ thống</span></div>
+        </article>
+      </section>
+
+      <section class="grid grid-2">
+        <article class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Top từ khoá</h2>
+              <p class="panel-subtitle">Hashtag &amp; từ khoá xuất hiện nhiều nhất ({{ rangeLabel }})</p>
+            </div>
+          </div>
+          <div v-if="keywords.length === 0" class="state" style="padding: 30px 12px">
+            <span>Hệ thống đang tích hợp dữ liệu cào đa tầng thực tế. Chưa có dữ liệu creator/video cho đợt quét này</span>
+          </div>
+          <div v-else class="keyword-cloud">
+            <span
+              v-for="(keyword, index) in keywords"
+              :key="keyword.keyword"
+              class="pill"
+              :class="index < 3 ? 'pill-accent' : 'pill-neutral'"
+              :style="{ fontSize: `${clampFont(keyword.count)}px` }"
+            >
+              #{{ keyword.keyword }}
+              <span class="muted" style="font-size: 10px">{{ keyword.count }}</span>
+            </span>
+          </div>
+        </article>
+
+        <article class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Mức độ phổ biến từ khoá</h2>
+              <p class="panel-subtitle">Số lần xuất hiện theo từ khoá hàng đầu</p>
+            </div>
+          </div>
+          <div class="chart-frame is-sm">
+            <canvas ref="keywordCanvas" role="img" aria-label="Biểu đồ tần suất từ khoá"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="glass">
+        <div class="panel-header" style="padding: 20px 22px 0; margin-bottom: 14px">
+          <div>
+            <h2 class="panel-title">Video xu hướng</h2>
+            <p class="panel-subtitle">Video có tương tác cao ghi nhận từ TikTok</p>
+          </div>
+          <a class="btn btn-sm btn-ghost" href="/jobs.html">Tiến trình cào</a>
+        </div>
+
+        <div class="table-wrap" style="margin: 0 22px">
+          <table class="data">
+            <thead>
+              <tr>
+                <th style="min-width: 300px">Nội dung</th>
+                <th>Tác giả</th>
+                <th class="is-numeric">Lượt xem</th>
+                <th class="is-numeric">Lượt thích</th>
+                <th class="is-numeric">Bình luận</th>
+                <th class="is-numeric">Chia sẻ</th>
+                <th>Thu thập</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loadingTrends && trends.length === 0">
+                <td colspan="8"><div class="state"><span class="spinner"></span><span>Đang tải...</span></div></td>
+              </tr>
+              <tr v-else-if="trends.length === 0">
+                <td colspan="8">
+                  <div class="state">
+                    <span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span>
+                    <span>Hệ thống đang tích hợp dữ liệu cào đa tầng thực tế. Chưa có dữ liệu creator/video cho đợt quét này</span>
+                    <span class="muted">Chạy một phiên cào để bắt đầu thu thập dữ liệu xu hướng.</span>
+                  </div>
+                </td>
+              </tr>
+              <tr v-for="item in trends" :key="item.id" class="fade-in">
+                <td>
+                  <div class="cell-title-text" style="max-width: 420px">{{ item.content || "(không có mô tả)" }}</div>
+                  <div class="row" style="gap: 6px; margin-top: 6px; flex-wrap: wrap">
+                    <span v-for="keyword in (item.keywords || []).slice(0, 4)" :key="keyword" class="pill pill-neutral" style="font-size: 10px">
+                      #{{ keyword }}
+                    </span>
+                  </div>
+                </td>
+                <td class="secondary">{{ item.author || "—" }}</td>
+                <td class="is-numeric">{{ formatCompact(item.playCount) }}</td>
+                <td class="is-numeric">{{ formatCompact(item.diggCount) }}</td>
+                <td class="is-numeric">{{ formatCompact(item.commentCount) }}</td>
+                <td class="is-numeric">{{ formatCompact(item.shareCount) }}</td>
+                <td class="muted" style="font-size: 11.5px">{{ formatRelative(item.scrapedAt) }}</td>
+                <td style="text-align: right">
+                  <a v-if="item.videoUrl" class="btn btn-sm" :href="item.videoUrl" target="_blank" rel="noopener">Mở</a>
+                  <span v-else class="muted">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row-between" style="padding: 16px 22px 20px">
+          <span class="muted">Trang <span class="cell-strong">{{ page }}</span> / {{ totalPages }}</span>
+          <div class="row">
+            <button class="btn btn-sm btn-ghost" :disabled="page <= 1 || loadingTrends" @click="changePage(page - 1)">Trước</button>
+            <button class="btn btn-sm btn-ghost" :disabled="page >= totalPages || loadingTrends" @click="changePage(page + 1)">Sau</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="/js/trends.js"></script>
+  </body>
+</html>

@@ -1,0 +1,3 @@
+{"requestId":"947844a1-c467-413e-8c3a-77dd150e1fac","endpoint":"/api/v3/echotik/product/list?region=VN&page_num=1&page_size=10","phase":"intent","timestamp":"2026-11-06T20:16:01.223Z"}
+{"requestId":"947844a1-c467-413e-8c3a-77dd150e1fac","endpoint":"/api/v3/echotik/product/list?region=VN&page_num=1&page_size=10","phase":"dispatch","timestamp":"2026-11-06T20:16:01.233Z"}
+{"requestId":"947844a1-c467-413e-8c3a-77dd150e1fac","endpoint":"/api/v3/echotik/product/list?region=VN&page_num=1&page_size=10","phase":"response","httpStatus":200,"timestamp":"2026-11-06T20:16:02.273Z"}

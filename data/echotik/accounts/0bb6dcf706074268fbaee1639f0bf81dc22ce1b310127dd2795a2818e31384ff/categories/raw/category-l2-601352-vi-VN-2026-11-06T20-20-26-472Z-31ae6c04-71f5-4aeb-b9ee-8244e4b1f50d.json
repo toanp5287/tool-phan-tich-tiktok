@@ -1,0 +1,28 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "900488",
+      "category_level": "2",
+      "category_name": "Giày nữ",
+      "language": "vi-VN",
+      "parent_id": "601352"
+    },
+    {
+      "category_id": "900616",
+      "category_level": "2",
+      "category_name": "Giày nam",
+      "language": "vi-VN",
+      "parent_id": "601352"
+    },
+    {
+      "category_id": "900744",
+      "category_level": "2",
+      "category_name": "Phụ kiện giày",
+      "language": "vi-VN",
+      "parent_id": "601352"
+    }
+  ],
+  "requestId": "7a1286f6-cf83-4905-9c19-bd92c75c7d3e"
+}

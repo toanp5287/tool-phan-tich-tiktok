@@ -1,0 +1,2 @@
+{"requestId":"c5aab39a-e100-41aa-a4ad-541cfedbc89b","endpoint":"/api/v3/echotik/product/list?region=VN&page_num=1&page_size=10","phase":"intent","timestamp":"2026-11-06T19:59:19.013Z"}
+{"requestId":"c5aab39a-e100-41aa-a4ad-541cfedbc89b","endpoint":"/api/v3/echotik/product/list?region=VN&page_num=1&page_size=10","phase":"error","httpStatus":null,"message":"\nInvalid `prisma.$queryRaw()` invocation:\n\n\nRaw query failed. Code: `42725`. Message: `operator is not unique: unknown + unknown`","timestamp":"2026-11-06T19:59:19.028Z"}

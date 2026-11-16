@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Quản lý danh sách Top Shop mục tiêu và điều phối cào dữ liệu chuyên sâu" />
+    <title>Mục tiêu Top Shop | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/targets.js" defer></script>
+    <style>
+      .badge-top10 {
+        background: rgba(239, 68, 68, 0.18);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+      }
+      .badge-top50 {
+        background: rgba(245, 158, 11, 0.14);
+        color: #b45309;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+      }
+      .badge-top100 {
+        background: rgba(59, 130, 246, 0.12);
+        color: #1d4ed8;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 38px;
+        height: 20px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #334155;
+        transition: .3s;
+        border-radius: 20px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #10b981;
+      }
+      input:checked + .slider:before {
+        transform: translateX(18px);
+      }
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .modal-box {
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 14px;
+        width: min(520px, 94vw);
+        padding: 24px;
+        box-shadow: 0 20px 40px rgba(15,23,42,0.18);
+      }
+    </style>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polygon points="12 8 8 12 12 16 16 12 12 8" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-name">Mục tiêu Top Shop</h1>
+            <p class="brand-sub">Quản lý định danh các nhà bán hàng trọng điểm & cào chuyên sâu</p>
+          </div>
+        </div>
+
+
+
+        <div class="row">
+          <span class="pill" :class="scrapeStatus.running ? 'pill-live' : 'pill-neutral'">
+            <span class="dot" :class="{ 'dot-live': scrapeStatus.running }"></span>
+            {{ scrapeStatus.running ? "Đang cào Profile" : "Sẵn sàng" }}
+          </span>
+          <button
+            class="btn btn-primary"
+            :disabled="scrapeStatus.running || triggeringScrape || !scrapeStatus.config.externalActionsEnabled"
+            :title="!scrapeStatus.config.externalActionsEnabled ? 'Thu thập đang tắt trong chế độ dataset offline' : ''"
+            @click="triggerScrape"
+          >
+            <span v-if="triggeringScrape || scrapeStatus.running" class="spinner" style="width: 13px; height: 13px; border-width: 2px"></span>
+            <span>{{ scrapeStatus.running ? "Đang chạy cào..." : "Cào Top Shop ngay" }}</span>
+          </button>
+          <button class="btn btn-secondary" @click="openCreateModal">
+            Thêm Top Shop
+          </button>
+        </div>
+      </header>
+
+      <!-- Alert banners -->
+      <div v-if="successMsg" class="banner" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #065f46">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>{{ successMsg }}</strong></div>
+        <button class="btn btn-sm btn-ghost" style="margin-left: auto" aria-label="Đóng" @click="successMsg = ''">Đóng</button>
+      </div>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Đã xảy ra lỗi:</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-left: auto" @click="fetchTargets">Thử lại</button>
+      </div>
+
+      <!-- KPI Summary -->
+      <section class="grid grid-kpi">
+        <article class="kpi">
+          <div class="kpi-label">Tổng Top Shop</div>
+          <p class="kpi-value">{{ formatNumber(kpiTotal) }}</p>
+          <div class="kpi-foot"><span class="muted">Đã cấu hình theo dõi</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Đang kích hoạt</div>
+          <p class="kpi-value text-emerald-400" style="color: #34d399">{{ formatNumber(kpiActive) }}</p>
+          <div class="kpi-foot"><span class="muted">Sẽ được quét trong đợt tới</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Nhóm TOP 10</div>
+          <p class="kpi-value text-rose-400" style="color: #f87171">{{ formatNumber(kpiTop10) }}</p>
+          <div class="kpi-foot"><span class="muted">Ưu tiên quét cao nhất</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Nhóm TOP 50</div>
+          <p class="kpi-value text-amber-400" style="color: #fbbf24">{{ formatNumber(kpiTop50) }}</p>
+          <div class="kpi-foot"><span class="muted">Nhà bán hàng tiềm năng</span></div>
+        </article>
+      </section>
+
+      <!-- Filter bar -->
+      <section class="card stack" style="gap: 16px;">
+        <div class="row" style="flex-wrap: wrap; gap: 12px; justify-content: space-between;">
+          <div class="row" style="flex: 1; min-width: 260px; gap: 10px;">
+            <div class="field" style="flex: 1; max-width: 360px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input v-model="search" class="input" type="search" placeholder="Tìm theo username hoặc tên shop..." />
+            </div>
+            <select v-model="priorityFilter" class="select" style="width: auto;" @change="fetchTargets">
+              <option value="">Tất cả phân tầng</option>
+              <option value="TOP10">TOP10</option>
+              <option value="TOP50">TOP50</option>
+              <option value="TOP100">TOP100</option>
+            </select>
+            <select v-model="categoryFilter" class="select" style="width: auto;" @change="fetchTargets">
+              <option value="">Tất cả ngành hàng</option>
+              <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+            <select v-model="activeFilter" class="select" style="width: auto;" @change="fetchTargets">
+              <option value="">Tất cả trạng thái</option>
+              <option value="true">Đang kích hoạt</option>
+              <option value="false">Tạm dừng</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-ghost btn-sm" @click="fetchTargets">Làm mới</button>
+          </div>
+        </div>
+
+        <!-- Table of Targets -->
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 220px;">Username</th>
+                <th>Tên hiển thị</th>
+                <th>Ngành hàng</th>
+                <th>Phân tầng</th>
+                <th>Cào gần nhất</th>
+                <th>Lượt cào / Lỗi</th>
+                <th style="text-align: center;">Kích hoạt</th>
+                <th style="text-align: right;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading">
+                <td colspan="8" style="text-align: center; padding: 40px;" class="muted">
+                  <div class="spinner" style="margin: 0 auto 10px; width: 20px; height: 20px;"></div>
+                  Đang tải danh sách...
+                </td>
+              </tr>
+              <tr v-else-if="filteredTargets.length === 0">
+                <td colspan="8" style="text-align: center; padding: 40px;" class="muted">
+                  Chưa có shop mục tiêu nào phù hợp. Hãy bấm <strong>+ Thêm Top Shop</strong> để bắt đầu.
+                </td>
+              </tr>
+              <tr v-for="item in filteredTargets" :key="item.id">
+                <td>
+                  <a
+                    :href="'https://www.tiktok.com/@' + item.username"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mono font-semibold text-sky-400 hover:underline"
+                    style="color: #38bdf8; text-decoration: none;"
+                  >
+                    @{{ item.username }} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  </a>
+                </td>
+                <td>
+                  <span class="font-medium">{{ item.displayName || '—' }}</span>
+                  <div v-if="item.note" class="muted" style="font-size: 11px;">{{ item.note }}</div>
+                </td>
+                <td>
+                  <span class="pill pill-neutral">{{ item.category || 'Chưa phân loại' }}</span>
+                </td>
+                <td>
+                  <span
+                    class="pill font-bold"
+                    :class="{
+                      'badge-top10': item.priority === 'TOP10',
+                      'badge-top50': item.priority === 'TOP50',
+                      'badge-top100': item.priority === 'TOP100'
+                    }"
+                  >
+                    {{ item.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="muted font-mono" style="font-size: 12px;">{{ formatDate(item.lastScrapedAt, 'time') }}</span>
+                </td>
+                <td>
+                  <span class="mono">{{ item.scrapeCount }}</span>
+                  <span v-if="item.failCount > 0" class="text-rose-400 font-semibold" style="color: #f87171; font-size: 11px; margin-left: 4px;">
+                    ({{ item.failCount }} lỗi)
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <label class="switch">
+                    <input type="checkbox" :checked="item.isActive" @change="toggleStatus(item)" />
+                    <span class="slider"></span>
+                  </label>
+                </td>
+                <td style="text-align: right;">
+                  <div class="row" style="justify-content: flex-end; gap: 6px;">
+                    <button class="btn btn-sm btn-ghost" @click="openEditModal(item)">Sửa</button>
+                    <button class="btn btn-sm btn-ghost text-rose-400" style="color: #f87171;" @click="deleteItem(item)">Xoá</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Modal Thêm / Sửa Top Shop -->
+      <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+        <div class="modal-box stack" style="gap: 18px;">
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 18px; margin: 0; font-weight: 700;">
+              {{ isEditing ? 'Chỉnh sửa Top Shop' : 'Thêm Top Shop mục tiêu mới' }}
+            </h2>
+            <button class="btn btn-sm btn-ghost" aria-label="Đóng" @click="showModal = false">Đóng</button>
+          </div>
+
+          <form class="stack" style="gap: 14px;" @submit.prevent="saveTarget">
+            <div>
+              <label class="kpi-label" style="display: block; margin-bottom: 6px;">TikTok Username *</label>
+              <input
+                v-model="form.username"
+                class="input"
+                type="text"
+                placeholder="Ví dụ: coolmate.me hoặc @coolmate.me"
+                :disabled="isEditing"
+                required
+              />
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label class="kpi-label" style="display: block; margin-bottom: 6px;">Tên hiển thị</label>
+                <input v-model="form.displayName" class="input" type="text" placeholder="Ví dụ: Coolmate Vietnam" />
+              </div>
+              <div>
+                <label class="kpi-label" style="display: block; margin-bottom: 6px;">Ngành hàng</label>
+                <input v-model="form.category" class="input" type="text" placeholder="Ví dụ: Thời trang" />
+              </div>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label class="kpi-label" style="display: block; margin-bottom: 6px;">Phân tầng ưu tiên</label>
+                <select v-model="form.priority" class="select">
+                  <option value="TOP10">TOP 10 (Quét hàng đầu)</option>
+                  <option value="TOP50">TOP 50 (Quét thường xuyên)</option>
+                  <option value="TOP100">TOP 100 (Quét tiêu chuẩn)</option>
+                </select>
+              </div>
+              <div>
+                <label class="kpi-label" style="display: block; margin-bottom: 6px;">Giới hạn video / shop</label>
+                <input v-model="form.maxItems" class="input" type="number" placeholder="Mặc định: 50" min="5" max="500" />
+              </div>
+            </div>
+
+            <div>
+              <label class="kpi-label" style="display: block; margin-bottom: 6px;">Ghi chú</label>
+              <textarea v-model="form.note" class="input" rows="2" placeholder="Ghi chú về shop này..."></textarea>
+            </div>
+
+            <div class="row" style="gap: 10px; align-items: center; margin-top: 4px;">
+              <label class="switch">
+                <input type="checkbox" v-model="form.isActive" />
+                <span class="slider"></span>
+              </label>
+              <span style="font-size: 13px;">Kích hoạt cào shop này trong tiến trình tự động</span>
+            </div>
+
+            <div class="row" style="justify-content: flex-end; gap: 10px; margin-top: 10px;">
+              <button type="button" class="btn btn-ghost" @click="showModal = false">Hủy</button>
+              <button type="submit" class="btn btn-primary" :disabled="submitting">
+                <span v-if="submitting" class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></span>
+                <span>{{ isEditing ? 'Lưu thay đổi' : 'Thêm vào danh sách' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

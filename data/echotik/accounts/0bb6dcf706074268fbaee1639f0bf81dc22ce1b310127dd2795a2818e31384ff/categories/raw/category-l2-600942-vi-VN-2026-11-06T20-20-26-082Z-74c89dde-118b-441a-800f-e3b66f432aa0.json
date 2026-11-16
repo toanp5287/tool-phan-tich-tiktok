@@ -1,0 +1,42 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "2109200",
+      "category_level": "2",
+      "category_name": "Đồ gia dụng được tái chế",
+      "language": "vi-VN",
+      "parent_id": "600942"
+    },
+    {
+      "category_id": "844168",
+      "category_level": "2",
+      "category_name": "Dụng cụ nhà bếp",
+      "language": "vi-VN",
+      "parent_id": "600942"
+    },
+    {
+      "category_id": "844808",
+      "category_level": "2",
+      "category_name": "Đồ gia dụng",
+      "language": "vi-VN",
+      "parent_id": "600942"
+    },
+    {
+      "category_id": "845064",
+      "category_level": "2",
+      "category_name": "Đồ gia dụng lớn",
+      "language": "vi-VN",
+      "parent_id": "600942"
+    },
+    {
+      "category_id": "845320",
+      "category_level": "2",
+      "category_name": "Thiết bị thương mại",
+      "language": "vi-VN",
+      "parent_id": "600942"
+    }
+  ],
+  "requestId": "15d63e31-1e9a-4885-a227-1cff68750633"
+}

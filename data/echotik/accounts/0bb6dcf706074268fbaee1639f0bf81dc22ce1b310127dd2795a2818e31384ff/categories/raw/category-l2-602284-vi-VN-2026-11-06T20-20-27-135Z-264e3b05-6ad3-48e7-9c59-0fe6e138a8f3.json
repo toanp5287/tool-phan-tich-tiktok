@@ -1,0 +1,77 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "877320",
+      "category_level": "2",
+      "category_name": "Quần áo & Giày trẻ em",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "877576",
+      "category_level": "2",
+      "category_name": "Những vật dụng cần thiết khi cho bé đi du lịch",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "877832",
+      "category_level": "2",
+      "category_name": "Cho bú & Cho ăn",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "878216",
+      "category_level": "2",
+      "category_name": "Nội thất cho trẻ em",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "878600",
+      "category_level": "2",
+      "category_name": "An toàn cho bé",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "878984",
+      "category_level": "2",
+      "category_name": "Đồ chơi trẻ em",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "879112",
+      "category_level": "2",
+      "category_name": "Chăm sóc bé & sức khỏe",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "879496",
+      "category_level": "2",
+      "category_name": "Sữa công thức & Thực phẩm cho trẻ",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "880008",
+      "category_level": "2",
+      "category_name": "Vật tư cho mẹ",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    },
+    {
+      "category_id": "961928",
+      "category_level": "2",
+      "category_name": "Phụ kiện thời trang cho em bé",
+      "language": "vi-VN",
+      "parent_id": "602284"
+    }
+  ],
+  "requestId": "1b37d2b7-3ecd-459b-968e-d19a94017b4c"
+}

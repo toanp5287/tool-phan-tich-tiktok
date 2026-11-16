@@ -1,0 +1,791 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ScrapeJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+// Mức ưu tiên cào: TOP10 cào nhiều nhất, TOP100 cào thưa hơn
+enum ShopPriority {
+  TOP10
+  TOP50
+  TOP100
+}
+
+// Vai trò của người sáng tạo trên TikTok Shop
+enum CreatorRole {
+  CREATOR
+  AFFILIATE
+}
+
+// ==========================================
+// 0. DANH SÁCH TOP SHOP MỤC TIÊU (TARGETED PROFILES)
+// ==========================================
+
+model TargetedShop {
+  id Int @id @default(autoincrement())
+
+  // Định danh TikTok
+  username       String  @unique // VD: "@shopA", "shopA" (không phân biệt @)
+  platformShopId String? // Shop ID chính thức từ TikTok (nếu biết)
+
+  // Thông tin nghiệp vụ
+  displayName String? // Tên hiển thị thân thiện
+  category    String? // Ngành hàng chính (Fashion, Beauty, F&B...)
+  note        String? // Ghi chú nội bộ
+
+  // Phân cấp ưu tiên cào
+  priority ShopPriority @default(TOP100)
+
+  // Điều khiển
+  isActive      Boolean   @default(true) // Bật/tắt quét
+  lastScrapedAt DateTime? // Timestamp lần cào thành công gần nhất
+  scrapeCount   Int       @default(0) // Tổng số lần đã cào
+  failCount     Int       @default(0) // Số lần liên tiếp thất bại
+
+  // Cấu hình cào riêng từng shop (override global)
+  // VD: { "resultsPerPage": 50, "sections": ["videos", "shop_products"] }
+  scrapeConfig Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, priority])
+  @@index([category, isActive])
+  @@index([lastScrapedAt])
+}
+
+// ==========================================
+// 0b. DANH MỤC NGÀNH HÀNG (CATEGORY / SUB-CATEGORY)
+// ==========================================
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subCategories SubCategory[]
+  snapshots     CategorySnapshot[]
+
+  @@index([isActive, sortOrder])
+}
+
+model SubCategory {
+  id          Int     @id @default(autoincrement())
+  categoryId  Int
+  name        String
+  slug        String
+  description String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category          Category                @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  thirdLevelCategories ThirdLevelCategory[]
+
+  @@unique([categoryId, name])
+  @@unique([categoryId, slug])
+  @@index([categoryId, isActive, sortOrder])
+}
+
+// ==========================================
+// 0c. DANH MỤC CẤP 3 (THIRD LEVEL CATEGORY)
+// ==========================================
+
+model ThirdLevelCategory {
+  id              Int     @id @default(autoincrement())
+  subCategoryId   Int
+  name            String
+  slug            String
+  description     String?
+  sortOrder       Int     @default(0)
+  isActive        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subCategory SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([subCategoryId, name])
+  @@unique([subCategoryId, slug])
+  @@index([subCategoryId, isActive, sortOrder])
+}
+
+
+// ==========================================
+// 1. XU HƯỚNG VIDEO TIKTOK
+// ==========================================
+
+model TrendItem {
+  id              Int      @id @default(autoincrement())
+  platformVideoId String?  @unique
+  author          String?
+  content         String
+  keywords        String[] @default([])
+  videoUrl        String?
+  coverUrl        String? // Ảnh bìa video (thumbnail) để hiển thị trực quan
+
+  playCount    BigInt?
+  diggCount    BigInt?
+  shareCount   BigInt?
+  commentCount BigInt?
+
+  // Liên kết sản phẩm/creator để phục vụ "Top Trend Video của sản phẩm"
+  productId  Int?
+  creatorId  Int?
+  shopId     Int?
+  bucketDate DateTime? @db.Date
+
+  scrapedAt   DateTime @default(now())
+  scrapeJobId Int?
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  creator Creator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  shop    Shop?    @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  productLinks ProductVideo[]
+
+  @@index([scrapedAt])
+  @@index([author])
+  @@index([productId, scrapedAt])
+  @@index([creatorId, scrapedAt])
+  @@index([shopId, scrapedAt])
+  @@index([bucketDate])
+}
+
+// ==========================================
+// 2. SẢN PHẨM TIKTOK SHOP
+// ==========================================
+
+model Product {
+  id                Int     @id @default(autoincrement())
+  platformProductId String  // Mã ID sản phẩm thực tế từ TikTok
+  source            String  @default("apify") // "apify" | "echotik" | "hybrid"
+  title             String
+  description       String?
+  imageUrl          String?
+  productUrl        String?
+  category          String?
+  subCategory       String?
+
+  // FK trực tiếp tới shop chính (nhà bán đại diện) — quan hệ 1-n rõ ràng.
+  shopId Int?
+  shop   Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
+
+  currency String @default("VND")
+  region   String @default("VN")
+
+  // ─── Phân khúc giá (bóc tách từ mảng skus/variants) ───────────────────
+  minPrice          Decimal? @db.Decimal(18, 2)
+  maxPrice          Decimal? @db.Decimal(18, 2)
+  minOriginalPrice  Decimal? @db.Decimal(18, 2) // Giá niêm yết thấp nhất
+  maxOriginalPrice  Decimal? @db.Decimal(18, 2) // Giá niêm yết cao nhất
+  variantCount      Int      @default(0)
+
+  // ─── Chỉ số cạnh tranh (tổng hợp từ snapshot mới nhất) ────────────────
+  sellerCount Int      @default(0) // Số người bán cùng sản phẩm
+  soldCount   BigInt? // Tổng lượt bán tích luỹ
+  avgPrice    Decimal? @db.Decimal(18, 2)
+
+  // ─── Tồn kho & đánh giá (dữ liệu thương mại TikTok Shop) ──────────────
+  stockTotal  Int? // Tổng tồn kho của toàn bộ SKU
+  ratingScore Decimal? @db.Decimal(4, 2)
+  ratingCount BigInt?
+  isAvailable Boolean  @default(true)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productShops ProductShop[]
+  snapshots    ProductSnapshot[]
+  variants     ProductVariant[]
+  trendItems   TrendItem[]
+  creatorLinks ProductCreator[]
+  aiReports   AiAnalysisReport[]
+  videoLinks ProductVideo[]
+  intelligenceObservations IntelligenceObservation[]
+
+  @@unique([platformProductId, source])
+  @@index([shopId])
+  @@index([region, category])
+  @@index([category, subCategory])
+  @@index([lastSeenAt])
+  @@index([title])
+  @@index([minPrice])
+  @@index([maxPrice])
+  @@index([sellerCount])
+  @@index([source])
+}
+
+// ==========================================
+// 2b. BIẾN THỂ / SKU CỦA SẢN PHẨM
+// ==========================================
+
+model ProductVariant {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  platformSkuId String // Mã SKU từ TikTok (hoặc tổng hợp khi không có)
+  name          String? // Tên biến thể (VD: "Đen, Size M")
+  price         Decimal? @db.Decimal(18, 2)
+  originalPrice Decimal? @db.Decimal(18, 2) // Giá niêm yết trước giảm giá
+  stock         Int?
+  soldCount     Int?
+  isAvailable   Boolean  @default(true)
+  attributes    Json?
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, platformSkuId])
+  @@index([productId, price])
+}
+
+// ==========================================
+// 3. SHOP TIKTOK SHOP (NHÀ BÁN HÀNG)
+// ==========================================
+
+model Shop {
+  id             Int     @id @default(autoincrement())
+  platformShopId String  // Mã ID cửa hàng thực tế từ TikTok
+  source         String  @default("apify") // "apify" | "echotik" | "hybrid"
+  name           String
+  username       String?
+  avatarUrl      String?
+  bannerUrl      String? // Ảnh bìa cửa hàng (banner) để hiển thị trang chi tiết
+  shopUrl        String?
+
+  region        String  @default("VN")
+  followerCount BigInt? // Lượng người theo dõi shop (nếu Actor trả về)
+
+  // ─── Tổng hợp thương mại (tính từ snapshot mới nhất) ──────────────────
+  productCount   Int      @default(0)
+  soldCountTotal BigInt?
+  gmvTotal       Decimal? @db.Decimal(20, 2)
+  avgOrderValue  Decimal? @db.Decimal(20, 2)
+  ratingScore    Decimal? @db.Decimal(4, 2)
+  ratingCount    BigInt?
+
+  // ─── Source-specific metadata ──────────────────────────────────────────
+  echotikMetadata Json? // { response_rate, delivery_rate, shop_type, sec_uid, category_ids, ... }
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productShops     ProductShop[]
+  creatorShops     CreatorShop[]
+  revenueSnapshots ShopRevenueSnapshot[]
+  trendItems       TrendItem[]
+  products         Product[]
+
+  @@unique([platformShopId, source])
+  @@index([region, name])
+  @@index([lastSeenAt])
+  @@index([username])
+  @@index([region, gmvTotal])
+  @@index([source])
+}
+
+// ==========================================
+// 3b. NHÀ SÁNG TẠO / AFFILIATE (CREATORS)
+// ==========================================
+
+model Creator {
+  id                Int         @id @default(autoincrement())
+  platformCreatorId String      // ID người dùng TikTok
+  source            String      @default("apify") // "apify" | "echotik" | "hybrid"
+  username          String?
+  displayName       String
+  avatarUrl         String?
+  bio               String?
+  role              CreatorRole @default(CREATOR)
+
+  region String @default("VN")
+
+  // Chỉ số tích luỹ (tổng hợp từ snapshot mới nhất)
+  followerCount  BigInt?
+  followingCount BigInt?
+  likeCount      BigInt?
+  engagementRate Decimal? @db.Decimal(8, 4) // % tương tác trung bình
+  gmvTotal       Decimal? @db.Decimal(20, 2)
+  soldCount      BigInt?
+  videoCount     Int?
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productLinks ProductCreator[]
+  shopLinks    CreatorShop[]
+  snapshots    CreatorSnapshot[]
+  trendItems   TrendItem[]
+
+  @@unique([platformCreatorId, source])
+  @@index([region, gmvTotal])
+  @@index([followerCount])
+  @@index([username])
+  @@index([lastSeenAt])
+  @@index([source])
+}
+
+// Sản phẩm mà creator/affiliate đang bán hoặc đã gắn giỏ hàng
+model ProductCreator {
+  id        Int @id @default(autoincrement())
+  productId Int
+  creatorId Int
+
+  isActive Boolean @default(true)
+
+  gmvTotal       Decimal? @db.Decimal(20, 2)
+  soldCount      BigInt?
+  videoCount     Int?
+  commissionRate Decimal? @db.Decimal(8, 4)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, creatorId])
+  @@index([creatorId, isActive])
+  @@index([productId, isActive])
+  @@index([creatorId, gmvTotal])
+}
+
+// Affiliate thuộc một shop cụ thể (phục vụ "Top 10 affiliate của shop")
+model CreatorShop {
+  id        Int @id @default(autoincrement())
+  creatorId Int
+  shopId    Int
+
+  isActive Boolean @default(true)
+
+  gmvTotal       Decimal? @db.Decimal(20, 2)
+  soldCount      BigInt?
+  videoCount     Int?
+  commissionRate Decimal? @db.Decimal(8, 4)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, shopId])
+  @@index([shopId, isActive, gmvTotal])
+  @@index([creatorId, isActive])
+}
+
+model CreatorSnapshot {
+  id BigInt @id @default(autoincrement())
+
+  creatorId   Int
+  scrapeJobId Int?
+
+  source     String
+  capturedAt DateTime @default(now())
+  bucketDate DateTime @db.Date
+
+  followerCount  BigInt?
+  engagementRate Decimal? @db.Decimal(8, 4)
+  gmvTotal       Decimal? @db.Decimal(20, 2)
+  soldCount      BigInt?
+  videoCount     Int?
+
+  isEstimated Boolean @default(false)
+  rawData     Json?
+
+  creator   Creator    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  scrapeJob ScrapeJob? @relation(fields: [scrapeJobId], references: [id])
+
+  @@unique([creatorId, source, bucketDate])
+  @@index([creatorId, capturedAt])
+  @@index([bucketDate])
+}
+
+// ==========================================
+// 3c. DOANH THU SHOP BÓC TÁCH THEO NGUỒN TIỀN
+// (Video / Live / Giỏ hàng - Shopping Cart / Product Card)
+// ==========================================
+
+model ShopRevenueSnapshot {
+  id BigInt @id @default(autoincrement())
+
+  shopId      Int
+  scrapeJobId Int?
+
+  source     String
+  capturedAt DateTime @default(now())
+  bucketDate DateTime @db.Date
+
+  gmvVideo       Decimal? @db.Decimal(20, 2)
+  gmvLive        Decimal? @db.Decimal(20, 2)
+  gmvCart        Decimal? @db.Decimal(20, 2)
+  gmvProductCard Decimal? @db.Decimal(20, 2)
+  gmvTotal       Decimal? @db.Decimal(20, 2)
+
+  soldCountTotal BigInt?
+  productCount   Int?
+  avgOrderValue  Decimal? @db.Decimal(20, 2)
+  ratingScore    Decimal? @db.Decimal(4, 2)
+  ratingCount    BigInt?
+
+  isEstimated Boolean @default(false)
+  rawData     Json?
+
+  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  scrapeJob ScrapeJob? @relation(fields: [scrapeJobId], references: [id])
+
+  @@unique([shopId, source, bucketDate])
+  @@index([shopId, capturedAt])
+  @@index([bucketDate])
+}
+
+// ==========================================
+// 4. LIÊN KẾT SẢN PHẨM VÀ SHOP (NHÀ BÁN ĐANG BÁN SP NÀO)
+// ==========================================
+
+model ProductShop {
+  id        Int @id @default(autoincrement())
+  productId Int
+  shopId    Int
+
+  isActive Boolean @default(true)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  snapshots ShopProductSnapshot[]
+
+  @@unique([productId, shopId])
+  @@index([shopId, isActive])
+  @@index([productId, isActive])
+}
+
+// ==========================================
+// 5. LỊCH SỬ BIẾN ĐỘNG SẢN PHẨM
+// DÙNG ĐỂ VẼ BIỂU ĐỒ VÀ XÁC ĐỊNH TOP XEM/BÁN NHIỀU NHẤT
+// ==========================================
+
+model ProductSnapshot {
+  id BigInt @id @default(autoincrement())
+
+  productId   Int
+  scrapeJobId Int?
+
+  source     String
+  capturedAt DateTime @default(now())
+  bucketDate DateTime @db.Date // Mốc ngày (UTC) để chống trùng khi cào lại trong ngày
+
+  // Giá sản phẩm
+  price              Decimal? @db.Decimal(18, 2)
+  originalPrice      Decimal? @db.Decimal(18, 2)
+  stockTotal         Int?
+  ratingScore        Decimal? @db.Decimal(4, 2)
+  ratingCount        BigInt?
+
+  // Số lượng bán & Lượt tương tác
+  soldCountTotal BigInt?
+  soldCount1d    BigInt?
+  soldCount7d    BigInt?
+  soldCount30d   BigInt?
+  soldCount90d   BigInt?
+  sellerCount    Int?
+
+  // Doanh thu GMV ước tính
+  gmvTotal Decimal? @db.Decimal(20, 2)
+  gmv1d    Decimal? @db.Decimal(20, 2)
+  gmv7d    Decimal? @db.Decimal(20, 2)
+  gmv30d   Decimal? @db.Decimal(20, 2)
+  gmv90d   Decimal? @db.Decimal(20, 2)
+
+  // Tương tác video (playCount, diggCount, shareCount, commentCount)
+  playCount    BigInt?
+  diggCount    BigInt?
+  shareCount   BigInt?
+  commentCount BigInt?
+
+  isEstimated Boolean @default(true)
+  rawData     Json?
+
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  scrapeJob ScrapeJob? @relation(fields: [scrapeJobId], references: [id], onDelete: SetNull)
+
+  @@unique([productId, source, bucketDate])
+  @@index([productId, capturedAt])
+  @@index([source, capturedAt])
+  @@index([bucketDate])
+}
+
+// ==========================================
+// 6. LỊCH SỬ BIẾN ĐỘNG TẠI TỪNG SHOP
+// ==========================================
+
+model ShopProductSnapshot {
+  id BigInt @id @default(autoincrement())
+
+  productShopId Int
+  scrapeJobId   Int?
+
+  source     String
+  capturedAt DateTime @default(now())
+  bucketDate DateTime @db.Date
+
+  price Decimal? @db.Decimal(18, 2)
+
+  soldCountTotal BigInt?
+  soldCount1d    BigInt?
+  soldCount7d    BigInt?
+  soldCount30d   BigInt?
+  soldCount90d   BigInt?
+
+  gmvTotal Decimal? @db.Decimal(20, 2)
+  gmv1d    Decimal? @db.Decimal(20, 2)
+  gmv7d    Decimal? @db.Decimal(20, 2)
+  gmv30d   Decimal? @db.Decimal(20, 2)
+  gmv90d   Decimal? @db.Decimal(20, 2)
+
+  playCount    BigInt?
+  diggCount    BigInt?
+  shareCount   BigInt?
+  commentCount BigInt?
+
+  isEstimated Boolean @default(true)
+  rawData     Json?
+
+  productShop ProductShop @relation(fields: [productShopId], references: [id], onDelete: Cascade)
+  scrapeJob   ScrapeJob?  @relation(fields: [scrapeJobId], references: [id], onDelete: SetNull)
+
+  @@unique([productShopId, source, bucketDate])
+  @@index([productShopId, capturedAt])
+  @@index([source, capturedAt])
+  @@index([bucketDate])
+}
+
+// ==========================================
+// 8. LỊCH SỬ BIẾN ĐỘNG DANH MỤC / NGÀNH HÀNG
+// DÙNG ĐỂ VẼ BIỂU ĐỒ NGÀNH HÀNG VÀ PHÂN TÍCH THỊ TRƯỜNG
+// ==========================================
+
+model CategorySnapshot {
+  id BigInt @id @default(autoincrement())
+
+  categoryId Int? // L1 category ID (có thể null nếu là snapshot toàn bộ thị trường)
+  scrapeJobId Int?
+
+  source     String
+  capturedAt DateTime @default(now())
+  bucketDate DateTime @db.Date
+
+  // Thống kê thị trường / ngành hàng
+  gmvTotal        Decimal? @db.Decimal(20, 2) // GMV ước tính toàn ngành
+  soldCountTotal  BigInt?  // Tổng số sản phẩm bán trong ngành
+  productCount    Int?     // Số sản phẩm hiện có
+  sellerCount     Int?     // Số cửa hàng trong ngành
+  avgPrice        Decimal? @db.Decimal(18, 2) // Giá trung bình sản phẩm
+  avgRating       Decimal? @db.Decimal(4, 2)  // Rating trung bình
+
+  // Top entities (JSON array để linh hoạt)
+  topProducts     Json? // [{productId, title, gmv, soldCount}, ...]
+  topSellers      Json? // [{sellerId, name, gmv, soldCount}, ...]
+
+  isEstimated Boolean @default(true)
+  rawData     Json?
+
+  category  Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  scrapeJob ScrapeJob? @relation(fields: [scrapeJobId], references: [id], onDelete: SetNull)
+
+  @@unique([categoryId, source, bucketDate])
+  @@index([categoryId, capturedAt])
+  @@index([source, capturedAt])
+  @@index([bucketDate])
+}
+
+// ==========================================
+// 9. QUẢN LÝ TIẾN TRÌNH THU THẬP DỮ LIỆU
+// ==========================================
+
+model ScrapeJob {
+  id Int @id @default(autoincrement())
+
+  source  String
+  jobType String
+  trigger String @default("manual")
+  region  String @default("VN")
+
+  status ScrapeJobStatus @default(PENDING)
+
+  startedAt  DateTime?
+  finishedAt DateTime?
+  durationMs Int?
+
+  recordsFound   Int @default(0)
+  recordsSaved   Int @default(0)
+  recordsUpdated Int @default(0)
+  recordsFailed  Int @default(0)
+
+  errorMessage String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  productSnapshots     ProductSnapshot[]
+  shopProductSnapshots ShopProductSnapshot[]
+  creatorSnapshots     CreatorSnapshot[]
+  shopRevenueSnapshots ShopRevenueSnapshot[]
+  categorySnapshots    CategorySnapshot[]
+  intelligenceObservations IntelligenceObservation[]
+
+  @@index([status, createdAt])
+  @@index([source, createdAt])
+  @@index([jobType, region, createdAt])
+}
+
+// ==========================================
+// 10. THEO DÕI SỬ DỤNG QUOTA ECHOTIK
+// ==========================================
+
+model EchoTikQuotaLog {
+  id Int @id @default(autoincrement())
+
+  requestType String   // Loại request (e.g., "product_search", "category_fetch", "seller_info")
+  count       Int      // Số request gọi
+  month       String   @unique // Format: YYYY-MM
+  resetDate   DateTime // Ngày reset quota tháng tiếp theo
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([month])
+}
+
+model EchoTikAccountQuota {
+  id          Int      @id @default(autoincrement())
+  accountKey  String
+  month       String
+  count       Int      @default(0)
+  requestType String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([accountKey, month])
+  @@index([month])
+}
+
+model EchoTikRawResponse {
+  id          BigInt   @id @default(autoincrement())
+  requestKey  String   @unique
+  endpoint    String
+  page        Int?
+  source      String   @default("echotik")
+  capturedAt  DateTime @default(now())
+  response    Json
+
+  @@index([endpoint, capturedAt])
+  @@index([source, capturedAt])
+}
+
+model AiAnalysisReport {
+  id            BigInt   @id @default(autoincrement())
+  productId     Int
+  status        String   @default("RUNNING")
+  model         String
+  promptVersion String
+  report        Json?
+  dataQuality   Json?
+  dataWindowDays Int
+  dataAsOf      DateTime?
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  totalTokens   Int      @default(0)
+  estimatedCost Decimal? @db.Decimal(18, 8)
+  errorMessage  String?
+  requestedAt   DateTime @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+  @@index([productId, status, createdAt])
+}
+
+model AiUsageCounter {
+  id           Int      @id @default(autoincrement())
+  scope        String
+  bucket       String
+  requestCount Int      @default(0)
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  totalTokens  Int      @default(0)
+  estimatedCost Decimal? @db.Decimal(18, 8)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([scope, bucket])
+  @@index([bucket])
+}
+
+// Append-only observations; legacy daily snapshots are not rewritten.
+model ProductVideo {
+  id Int @id @default(autoincrement())
+  productId Int
+  trendItemId Int
+  source String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  video TrendItem @relation(fields: [trendItemId], references: [id], onDelete: Restrict)
+  @@unique([productId, trendItemId, source])
+  @@index([trendItemId])
+}
+
+model IntelligenceObservation {
+  id BigInt @id @default(autoincrement())
+  productId Int
+  scrapeJobId Int
+  kind String
+  externalId String
+  source String @default("echotik")
+  capturedAt DateTime
+  rawRequestKeys Json
+  data Json
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  job ScrapeJob @relation(fields: [scrapeJobId], references: [id], onDelete: Restrict)
+  @@unique([scrapeJobId, kind, externalId])
+  @@index([productId, capturedAt])
+}

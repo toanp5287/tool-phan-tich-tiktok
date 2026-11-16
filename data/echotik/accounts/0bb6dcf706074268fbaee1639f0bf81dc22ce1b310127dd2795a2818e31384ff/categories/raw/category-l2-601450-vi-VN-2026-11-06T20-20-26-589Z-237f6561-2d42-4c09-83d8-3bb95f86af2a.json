@@ -1,0 +1,98 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "1086856",
+      "category_level": "2",
+      "category_name": "Chăm sóc móng tay",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "848648",
+      "category_level": "2",
+      "category_name": "Đồ trang điểm & Nước hoa",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "848776",
+      "category_level": "2",
+      "category_name": "Chăm sóc da",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "848904",
+      "category_level": "2",
+      "category_name": "Chăm sóc & Tạo kiểu tóc",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849032",
+      "category_level": "2",
+      "category_name": "Chăm sóc tay, chân & móng",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849160",
+      "category_level": "2",
+      "category_name": "Đồ tắm & Chăm sóc cơ thể",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849288",
+      "category_level": "2",
+      "category_name": "Sản phẩm chăm sóc dành cho nam giới",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849416",
+      "category_level": "2",
+      "category_name": "Thiết bị chăm sóc cá nhân",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849544",
+      "category_level": "2",
+      "category_name": "Chăm sóc mắt & tai",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849672",
+      "category_level": "2",
+      "category_name": "Chăm sóc mũi & răng miệng",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "849800",
+      "category_level": "2",
+      "category_name": "Sản phẩm chăm sóc dành cho phụ nữ",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "856208",
+      "category_level": "2",
+      "category_name": "Nước hoa",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    },
+    {
+      "category_id": "981128",
+      "category_level": "2",
+      "category_name": "Chăm sóc cá nhân đặc biệt",
+      "language": "vi-VN",
+      "parent_id": "601450"
+    }
+  ],
+  "requestId": "72917009-2a52-47c6-a9d2-c142439b9459"
+}

@@ -1,0 +1,59 @@
+/* ==========================================================================
+   TikTok Analytics — Unified Design Tokens
+   Single source of truth for color, type, spacing, radius, shadow.
+   Consumed by both the standalone pages (app.css) and the SPA (app/css/light.css).
+   ========================================================================== */
+
+:root {
+  /* Brand (blue) */
+  --brand: #2563eb;
+  --brand-strong: #1d4ed8;
+  --brand-soft: #eff6ff;
+
+  /* Surfaces */
+  --bg: #f8fafc;
+  --bg-soft: #f1f5f9;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Text */
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+
+  /* Semantic */
+  --success: #16a34a;
+  --success-soft: #f0fdf4;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --info: #0891b2;
+
+  /* Chart palette */
+  --c-chart-1: #2563eb;
+  --c-chart-2: #0891b2;
+  --c-chart-3: #16a34a;
+  --c-chart-4: #d97706;
+  --c-chart-5: #7c3aed;
+  --c-grid: rgba(15, 23, 42, 0.06);
+  --c-tick: #64748b;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 12px 32px -12px rgba(15, 23, 42, 0.18);
+
+  /* Typography */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}

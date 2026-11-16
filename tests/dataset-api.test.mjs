@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict';
+import { createApp } from '../dist/app.js';
+import { datasetDb, datasetPool } from '../dist/config/datasetDb.js';
+import { estimatedGmv, sumNumbers, simulatedTimeline, coverageFromDates, stateForPoints, stateForGrowth, datasetDay } from '../dist/services/analytics.js';
+import { canonicalId, canonicalShopId, explicitProductIds, postCommerceProductIds, discoverRawRelationships } from '../ops/raw-relation-recovery.mjs';
+const server = createApp().listen(0, '127.0.0.1');
+await new Promise(resolve => server.once('listening', resolve));
+const base = `http://127.0.0.1:${server.address().port}`;
+async function request(path, options) {
+ const response = await fetch(base + '/api' + path, options);
+ const body = await response.json();
+ return { response, body };
+}
+async function ok(path) {
+ const {response,body} = await request(path);
+ assert.equal(response.status,200,path+': '+JSON.stringify(body));
+ assert.equal(body.success,true,path);
+ return body;
+}
+try {
+ const observationCounts=async()=>Promise.all([datasetDb.productObservation.count(),datasetDb.shopObservation.count(),datasetDb.videoObservation.count(),datasetDb.creatorChannelObservation.count()]);
+ const beforeCounts=await observationCounts();
+ assert.equal(estimatedGmv(null,10),null);
+ assert.equal(estimatedGmv(10,null),null);
+ assert.equal(estimatedGmv(-1,10),null);
+  assert.equal(estimatedGmv(10,25),250);
+  assert.equal(estimatedGmv(0,25),0,'Observed zero sales differs from unknown sales');
+ assert.equal(sumNumbers([null,undefined]),null);
+ assert.equal(sumNumbers([0,null]),0);
+ assert.deepEqual(simulatedTimeline('product:42',30,100),simulatedTimeline('product:42',30,100));
+ assert.notDeepEqual(simulatedTimeline('product:42',30,100).points,simulatedTimeline('product:43',30,100).points);
+ const sim=simulatedTimeline('product:42',30,123.45);
+ assert.ok(Math.abs(sim.points.reduce((n,p)=>n+p.value,0)-123.45)<1e-8);
+ assert.equal(sim.analytics.dataKind,'SIMULATED');assert.equal(sim.analytics.coverage.source,'SIMULATED');
+ assert.equal(sim.analytics.coverage.points,30);assert.equal(sim.analytics.coverage.end,'2025-07-01');
+ assert.equal(simulatedTimeline('empty',30,null).analytics.state,'NO_TIMESTAMP');
+ assert.equal(simulatedTimeline('single',1,100).analytics.state,'SINGLE_POINT');
+ assert.equal(coverageFromDates([null,'unknown-1','2025-07-01','2025-07-01'],'test').points,1);
+ assert.deepEqual([0,1,2].map(stateForPoints),['NO_TIMESTAMP','SINGLE_POINT','OK']);
+ assert.equal(stateForGrowth(false),'INSUFFICIENT_BASELINE');
+  assert.equal(datasetDay(new Date('2025-06-30T18:00:00Z')),'2025-07-01');
+  assert.equal(canonicalId('1732261853552674196'),'1732261853552674196');
+  assert.equal(canonicalId('abc'),null);
+  assert.equal(canonicalShopId({seller_url:'https://shop.tiktok.com/sg/store/example/7494766780833171860'}),'7494766780833171860');
+  assert.equal(canonicalShopId({seller_id:'749***678'}),null);
+  assert.deepEqual(explicitProductIds({product_id:'1732261853552674196'}),[{id:'1732261853552674196',path:'$.product_id'}]);
+  assert.deepEqual(postCommerceProductIds({commerce_info:{sku_id:'1732261853552674196'}}),[],'SKU alone is not a ProductVideo proof');
+ const health=(await ok('/health')).data;
+ assert.equal(health.database,'tiktok_datasets_v2');assert.equal(health.legacyFallback,false);
+ const p=(await ok('/products?pageSize=2')).data[0];
+ const s=(await ok('/shops?pageSize=2')).data[0];
+  const c=(await ok('/creators?pageSize=2')).data[0];
+  const observedChannel=await datasetDb.creatorChannelObservation.findFirst({where:{observedAt:{not:null},followerCount:{not:null}},orderBy:[{channelId:'asc'},{observedAt:'asc'}],select:{channelId:true}});
+  const creatorHistory=(await ok('/creators/'+observedChannel.channelId+'?range=30d')).data;
+  assert.ok(creatorHistory.timeline.length>1);
+  assert.equal(creatorHistory.analytics.timeline.coverage.points,creatorHistory.timeline.length);
+  assert.ok(creatorHistory.timeline.every(point=>typeof point.followers==='number'));
+  const creatorDaily=(await ok('/creators/'+observedChannel.channelId+'/history?range=30d')).data;
+  assert.equal(new Set(creatorDaily.map(point=>point.date)).size,creatorDaily.length);
+  assert.deepEqual(creatorDaily,creatorHistory.timeline);
+ const v=(await ok('/trends?pageSize=2')).data[0];
+ const categories=(await ok('/categories')).data.categories;
+ const category=categories.find(c=>c.hasData);
+  assert.ok(p.id>=1000000000);
+  assert.ok(p.gmv===null || Number.isFinite(p.gmv));
+  assert.equal(p.analytics.gmv.dataKind,p.gmv===null?'UNKNOWN':'ESTIMATED');
+  assert.equal(p.analytics.gmv.method,p.gmv===null?null:'SOLD_COUNT_X_LATEST_OBSERVED_PRICE_V1');
+  assert.equal(p.analytics.growth.state,'INSUFFICIENT_BASELINE');
+  const pd=(await ok('/products/'+p.id+'?range=30d')).data;
+  assert.ok(['ESTIMATED','UNKNOWN','SIMULATED','VERIFIED'].includes(pd.analytics.timeline.dataKind),'product timeline dataKind');
+  assert.equal(pd.analytics.timeline.coverage.points,pd.timeline.length);
+  assert.equal(pd.growth.primary.gmv.growthRate,null);
+  assert.deepEqual(pd.timeline,(await ok('/products/'+p.id+'?range=30d')).data.timeline);
+  const vh=(await ok('/videos/'+v.id+'/history')).data;
+  assert.equal(vh.coverage.points,vh.data.length);
+  assert.equal(new Set(vh.data.map(p=>p.date)).size,vh.data.length);
+  assert.ok(vh.data.every(p=>/^\d{4}-\d{2}-\d{2}$/.test(p.date)));
+  const paths=['/overview','/analytics','/analytics/trends','/products/compare?ids='+p.id,'/products/'+p.id,'/products/'+p.id+'/creators','/products/'+p.id+'/videos','/shops/'+s.id,'/shops/'+s.id+'/products','/shops/'+s.id+'/creators','/shops/'+s.id+'/videos','/creators/'+c.id,'/creators/'+c.id+'/products','/creators/'+c.id+'/shops','/creators/top','/trends/keywords','/videos/'+v.id,'/videos/'+v.id+'/products','/videos/'+v.id+'/history','/creators/'+c.id+'/history','/categories/'+encodeURIComponent(category.name),'/trend-analysis/overview','/trend-analysis/comparison','/trend-analysis/periods','/price-segments/definitions','/price-segments/overview','/price-segments/products','/price-segments/products/'+p.id+'/variants','/growth/products/'+p.id,'/growth/shops/'+s.id,'/jobs','/scrape/status','/scrape/profile-status','/scrape/tiktok-shop/status','/admin/echotik/status','/admin/echotik/quota','/targets','/products/'+p.id+'/ai-analysis/latest','/products/'+p.id+'/ai-analysis','/datasets/status','/commerce/overview','/commerce/products','/commerce/shops','/commerce/creators','/commerce/categories','/commerce/trend-videos','/commerce/demo-products','/commerce/products/'+p.id+'/intelligence'];
+ for(const path of paths) await ok(path);
+ const cp=(await ok('/commerce/products?pageSize=1')).data[0];
+  if(cp) await ok('/commerce/products/'+cp.id);
+ const cs=(await ok('/commerce/shops?pageSize=1')).data[0];
+ if(cs) await ok('/commerce/shops/'+cs.id);
+ const cc=(await ok('/commerce/creators?pageSize=1')).data[0];
+  if(cc) await ok('/commerce/creators/'+cc.id);
+  assert.equal((await ok('/products/'+p.id+'/creators?pageSize=5')).pagination.total,0,'No creator attribution may be invented');
+  assert.equal((await ok('/products/'+p.id+'/videos?pageSize=5')).pagination.total,0,'No video attribution may be invented');
+ const first=await ok('/products?pageSize=2&page=1');const next=await ok('/products?pageSize=2&page=2');
+  assert.equal(first.pagination.total,1048);assert.equal(first.data.length,2);assert.ok(!next.data.some(x=>first.data.some(y=>y.id===x.id)));
+ assert.equal((await request('/products/1')).response.status,404);
+ assert.equal((await request('/products/1.5')).response.status,400);
+ assert.equal((await request('/scrape',{method:'POST'})).response.status,503);
+  // Product AI endpoint is covered by ai-source-permissions.test.mjs (mock provider) and
+  // market-gemini.test.mjs; do not trigger a live paid Gemini call from this suite.
+ const old=globalThis.fetch; globalThis.fetch=()=>{throw new Error('Unexpected external request');};
+ try {
+    const service=await import('../dist/services/datasetService.js');
+     const discovery=await discoverRawRelationships(datasetDb,{batchSize:1000,sampleLimit:1000});
+      assert.equal(discovery.scanned,39324);assert.equal(discovery.candidates.ProductShop.VERIFIED,316);assert.equal(discovery.candidates.ProductVideo.VERIFIED,0);assert.equal(discovery.candidates.ProductCreator.VERIFIED,0);
+    assert.ok((await service.products({pageSize:1})).items.length);
+    const rows=await service.loadProducts();
+    const multi=rows.find(row=>row.shops.length>1);
+    if(multi)for(const link of multi.shops){const result=await service.products({shopId:link.shopId,pageSize:100});assert.ok(result.items.some(item=>item.id===multi.id),'Every verified shop link must be filterable');}
+    const segmented=await service.segmentedProducts({});
+    const segments=await service.segmentOverview({});
+    assert.equal(segments.segments.reduce((sum,s)=>sum+s.productCount,0),segmented.length,'Exclusive segments must not duplicate products');
+    assert.ok(Math.abs((sumNumbers(segments.segments.map(s=>s.totalGmv))??0)-(segments.totalGmv??0))<0.01,'Exclusive segments must not duplicate GMV');
+    const ordered=await service.segmentedProducts({sortBy:'variants',sortDir:'desc'});
+    assert.ok(ordered.every((p,i)=>i===0||ordered[i-1].variantCount>=p.variantCount));
+    const maxOrdered=await service.segmentedProducts({sortBy:'maxPrice',sortDir:'desc'});
+    assert.ok(maxOrdered.every((p,i)=>i===0||maxOrdered[i-1].maxPrice>=p.maxPrice));
+    const scoped=await service.categoryDetail(category.name);
+    const expectedShops=new Set(rows.filter(row=>row.categories[0]?.category.name===category.name).flatMap(row=>row.shops.map(link=>link.shopId)));
+    assert.equal(scoped.shops.length,expectedShops.size,'Category shops cannot be truncated by unrelated pagination');
+    for(const shop of scoped.shops){const expected=rows.filter(row=>row.categories[0]?.category.name===category.name&&row.shops.some(link=>link.shopId===shop.id)).map(service.productCard).filter(p=>p.currency==='VND');assert.equal(shop.totalGmv,null);assert.equal(shop.linkedProductGmvEstimate,sumNumbers(expected.map(p=>p.gmv)));}
+    const tags=await service.keywords({limit:5});assert.ok(tags.length<=5);assert.ok(tags.some(tag=>tag.totalViews!==null));
+    const dated=await datasetDb.creatorChannelObservation.findFirst({where:{observedAt:{not:null}},select:{channelId:true}});
+    const detail=await service.creatorDetail(dated.channelId);assert.ok(detail.timeline.length>0);assert.equal(detail.analytics.timeline.coverage.points,detail.timeline.length);
+   const cards=(await service.loadProducts()).map(service.productCard);
+   const overview=await service.overview({range:'7d'});
+   assert.equal(overview.totals.totalGmv,sumNumbers(cards.filter(p=>p.currency==='VND').map(p=>p.gmv)));
+    assert.equal(overview.analytics.timeline.dataKind,'UNKNOWN');
+    assert.equal(overview.analytics.timeline.coverage.points,0);
+    assert.equal(overview.analytics.timeline.state,'NO_TIMESTAMP');
+    assert.deepEqual(overview.revenueTimeline,[]);
+   assert.equal(overview.growth.primary.gmv.growthRate,null);
+  } finally { globalThis.fetch=old; }
+   assert.deepEqual(await observationCounts(),beforeCounts,'Analytics must not write simulated observations');
+   for(const path of ['/price-segments/products?minPrice=10&maxPrice=1','/price-segments/products?segments=invalid','/overview?range=wrong','/targets?isActive=wrong','/targets?priority=wrong'])assert.equal((await request(path)).response.status,400,path);
+ console.log(JSON.stringify({result:'PASS',checkedPaths:paths.length+12,externalRequests:0,legacyFallback:false}));
+} finally { await new Promise(resolve=>server.close(resolve));await datasetDb.$disconnect();await datasetPool.end(); }

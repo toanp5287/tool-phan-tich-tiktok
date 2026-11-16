@@ -1,0 +1,224 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "0",
+      "category_level": "1",
+      "category_name": "Khác",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "2344592",
+      "category_level": "1",
+      "category_name": "Đặt chỗ và Phiếu giảm giá",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "600001",
+      "category_level": "1",
+      "category_name": "Đồ gia dụng",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "600024",
+      "category_level": "1",
+      "category_name": "Đồ dùng nhà bếp",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "600154",
+      "category_level": "1",
+      "category_name": "Hàng dệt & Đồ nội thất mềm",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "600942",
+      "category_level": "1",
+      "category_name": "Thiết bị gia dụng",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "601152",
+      "category_level": "1",
+      "category_name": "Trang phục nữ & Đồ lót",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "601303",
+      "category_level": "1",
+      "category_name": "Thời trang Hồi giáo",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "601352",
+      "category_level": "1",
+      "category_name": "Giày",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "601450",
+      "category_level": "1",
+      "category_name": "Chăm sóc sắc đẹp & Chăm sóc cá nhân",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "601739",
+      "category_level": "1",
+      "category_name": "Điện thoại & Đồ điện tử",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "601755",
+      "category_level": "1",
+      "category_name": "Máy tính & Thiết bị Văn phòng",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "602118",
+      "category_level": "1",
+      "category_name": "Đồ dùng cho thú cưng",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "602284",
+      "category_level": "1",
+      "category_name": "Trẻ sơ sinh & thai sản",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "603014",
+      "category_level": "1",
+      "category_name": "Thể thao & Ngoài trời",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "604206",
+      "category_level": "1",
+      "category_name": "Đồ chơi & sở thích",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "604453",
+      "category_level": "1",
+      "category_name": "Đồ nội thất",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "604579",
+      "category_level": "1",
+      "category_name": "Công cụ & Phần cứng",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "604968",
+      "category_level": "1",
+      "category_name": "Sửa chữa nhà cửa",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "605196",
+      "category_level": "1",
+      "category_name": "Ô tô & xe máy",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "605248",
+      "category_level": "1",
+      "category_name": "Phụ kiện thời trang",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "700437",
+      "category_level": "1",
+      "category_name": "Đồ ăn & Đồ uống",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "700645",
+      "category_level": "1",
+      "category_name": "Sức khỏe",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "801928",
+      "category_level": "1",
+      "category_name": "Sách, tạp chí & âm thanh",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "802184",
+      "category_level": "1",
+      "category_name": "Thời trang trẻ em",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "824328",
+      "category_level": "1",
+      "category_name": "Trang phục nam & Đồ lót",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "824584",
+      "category_level": "1",
+      "category_name": "Hành lý & Túi xách",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "834312",
+      "category_level": "1",
+      "category_name": "sản phẩm ảo",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "856720",
+      "category_level": "1",
+      "category_name": "Đã sử dụng",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "951432",
+      "category_level": "1",
+      "category_name": "Bộ sưu tập",
+      "language": "vi-VN",
+      "parent_id": "0"
+    },
+    {
+      "category_id": "953224",
+      "category_level": "1",
+      "category_name": "Phụ kiện trang sức & Phái sinh",
+      "language": "vi-VN",
+      "parent_id": "0"
+    }
+  ],
+  "requestId": "8af0aec4-13cf-4e32-b871-1b284c603696"
+}

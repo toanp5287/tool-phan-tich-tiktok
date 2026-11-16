@@ -1,0 +1,5 @@
+Local copies of the exact frontend library versions already used by this application:
+Vue 3.5.13 — https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js
+Chart.js 4.4.6 — https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js
+Both projects are MIT licensed; preserve upstream license banners.
+These files do not add a new provider, dependency version, or analytics source.

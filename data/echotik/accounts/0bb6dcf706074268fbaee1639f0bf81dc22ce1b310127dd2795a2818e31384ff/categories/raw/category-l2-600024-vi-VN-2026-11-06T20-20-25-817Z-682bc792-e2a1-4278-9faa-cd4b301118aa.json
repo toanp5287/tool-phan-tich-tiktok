@@ -1,0 +1,70 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "858504",
+      "category_level": "2",
+      "category_name": "Đồ để uống trà & cà phê",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "858632",
+      "category_level": "2",
+      "category_name": "Dao nhà bếp",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "858760",
+      "category_level": "2",
+      "category_name": "Tiệc nước barbecue",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "858888",
+      "category_level": "2",
+      "category_name": "Đồ dùng quầy rượu & Đồ uống rượu",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "859016",
+      "category_level": "2",
+      "category_name": "Đồ làm bánh",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "859144",
+      "category_level": "2",
+      "category_name": "Đồ nấu ăn",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "859272",
+      "category_level": "2",
+      "category_name": "Dao kéo & Bộ đồ ăn",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "859400",
+      "category_level": "2",
+      "category_name": "Bộ đồ uống",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    },
+    {
+      "category_id": "859528",
+      "category_level": "2",
+      "category_name": "Đồ dùng & Dụng cụ nhà bếp",
+      "language": "vi-VN",
+      "parent_id": "600024"
+    }
+  ],
+  "requestId": "2db82830-b18f-416d-b277-579a2932a0e2"
+}

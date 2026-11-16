@@ -1,0 +1,35 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "2315920",
+      "category_level": "2",
+      "category_name": "Ô tô",
+      "language": "vi-VN",
+      "parent_id": "2344592"
+    },
+    {
+      "category_id": "2316048",
+      "category_level": "2",
+      "category_name": "Tài sản",
+      "language": "vi-VN",
+      "parent_id": "2344592"
+    },
+    {
+      "category_id": "2316176",
+      "category_level": "2",
+      "category_name": "Du lịch và vé",
+      "language": "vi-VN",
+      "parent_id": "2344592"
+    },
+    {
+      "category_id": "888720",
+      "category_level": "2",
+      "category_name": "Phiếu ưu đãi thực thể",
+      "language": "vi-VN",
+      "parent_id": "2344592"
+    }
+  ],
+  "requestId": "c35b64bc-2972-4b65-9aed-9c52e4a0177b"
+}

@@ -1,0 +1,20 @@
+{
+  "group": "products",
+  "runId": "62eee8e1-f5f0-4eef-8cb3-ab189d7794a2",
+  "endpoints": [
+    "/api/v3/echotik/product/list"
+  ],
+  "requestsUsed": 0,
+  "requestsReserved": 0,
+  "requestsMax": 15,
+  "pages": 0,
+  "received": 0,
+  "created": 0,
+  "updated": 0,
+  "skipped": 0,
+  "failed": 0,
+  "quotaRemaining": null,
+  "status": "BLOCKED",
+  "errors": [],
+  "startedAt": "2026-11-06T20:23:19.236Z"
+}

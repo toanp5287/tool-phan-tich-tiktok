@@ -1,0 +1,55 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "dt": "2026-10-30",
+      "product_id": "1729416031812618252",
+      "spu_avg_price": 5.39,
+      "total_ifl_cnt": 28,
+      "total_live_cnt": 0,
+      "total_sale_1d_cnt": 0,
+      "total_sale_cnt": 828159,
+      "total_sale_gmv_1d_amt": 0,
+      "total_sale_gmv_amt": 705980.61,
+      "total_video_cnt": 17
+    },
+    {
+      "dt": "2026-10-31",
+      "product_id": "1729416031812618252",
+      "spu_avg_price": 5.71,
+      "total_ifl_cnt": 28,
+      "total_live_cnt": 0,
+      "total_sale_1d_cnt": 0,
+      "total_sale_cnt": 828159,
+      "total_sale_gmv_1d_amt": 0,
+      "total_sale_gmv_amt": 705980.61,
+      "total_video_cnt": 17
+    },
+    {
+      "dt": "2026-11-01",
+      "product_id": "1729416031812618252",
+      "spu_avg_price": 5.94,
+      "total_ifl_cnt": 28,
+      "total_live_cnt": 0,
+      "total_sale_1d_cnt": 0,
+      "total_sale_cnt": 828159,
+      "total_sale_gmv_1d_amt": 0,
+      "total_sale_gmv_amt": 705980.61,
+      "total_video_cnt": 17
+    },
+    {
+      "dt": "2026-11-04",
+      "product_id": "1729416031812618252",
+      "spu_avg_price": 5.96,
+      "total_ifl_cnt": 28,
+      "total_live_cnt": 0,
+      "total_sale_1d_cnt": 0,
+      "total_sale_cnt": 828159,
+      "total_sale_gmv_1d_amt": 0,
+      "total_sale_gmv_amt": 705980.61,
+      "total_video_cnt": 17
+    }
+  ],
+  "requestId": "b99347b3-1c41-44be-85f2-b929e2ac8ba4"
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Báo cáo AI</title><link rel="stylesheet" href="/css/app.css"><style>
+  .report-content,.report-plain { color: var(--text-secondary); font-size: 14px; line-height: 1.8; }
+  .report-content h1,.report-content h2,.report-content h3,.report-content h4 { color: var(--text-primary); margin: 26px 0 10px; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; }
+  .report-content h1 { font-size: 23px; }
+  .report-content h2 { font-size: 19px; padding-bottom: 9px; border-bottom: 1px solid var(--glass-border); }
+  .report-content h3 { font-size: 16px; }
+  .report-content h4 { font-size: 14px; }
+  .report-content h1:first-child,.report-content h2:first-child,.report-content h3:first-child,.report-content h4:first-child { margin-top: 0; }
+  .report-content p { margin: 0 0 14px; }
+  .report-content ul,.report-content ol { margin: 0 0 16px; padding-left: 22px; }
+  .report-content li { padding-left: 4px; margin: 6px 0; }
+  .report-content li::marker { color: var(--accent); }
+  .report-content table { display: block; width: 100%; overflow-x: auto; border: 1px solid var(--glass-border); border-radius: 12px; border-spacing: 0; border-collapse: separate; margin: 18px 0; }
+  .report-content td,.report-content th { min-width: 128px; padding: 10px 12px; border-right: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); text-align: left; vertical-align: top; }
+  .report-content tr:first-child td { color: var(--text-primary); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: rgba(37,99,235,.06); }
+  .report-content tr:last-child td { border-bottom: 0; }
+  .report-content td:last-child,.report-content th:last-child { border-right: 0; }
+  .report-content code { padding: 2px 5px; border-radius: 5px; background: rgba(15,23,42,.06); color: var(--text-primary); font-family: var(--font-mono); font-size: .9em; }
+  .report-content pre { margin: 18px 0; padding: 16px; border-radius: 12px; overflow-x: auto; background: #0f172a; color: #e2e8f0; }
+  .report-content pre code { padding: 0; background: transparent; color: inherit; }
+  .report-plain { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .report-json { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.7 var(--font-mono); background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 12px; overflow-x: auto; }
+  @media (max-width: 560px) { .report-content,.report-plain { font-size: 13px; } .report-content h1 { font-size: 20px; } .report-content h2 { font-size: 17px; } .report-content table { margin-inline: -2px; width: calc(100% + 4px); } }
+</style></head>
+<body><main id="app" v-cloak class="app-shell stack">
+  <header class="topbar"><div class="brand"><a class="brand-mark" href="/shop.html">←</a><div><h1 class="brand-name">AI Product Intelligence</h1><p class="brand-sub">Báo cáo phân tích TikTok Shop</p></div></div><div class="row"><a class="btn" :href="productUrl">Quay lại sản phẩm</a><button class="btn btn-primary" :disabled="loading" @click="reload">Tải lại</button></div></header>
+  <div v-if="loading" class="glass panel state"><span class="spinner"></span><span>Đang tải báo cáo...</span></div>
+  <div v-else-if="error" class="banner"><span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div>{{ error }}</div></div>
+  <template v-else-if="report">
+    <section class="glass panel"><div class="row-between"><div><h2 class="panel-title">{{ report.product?.title || `Sản phẩm #${report.productId}` }}</h2><p class="panel-subtitle">Phân tích {{ report.dataWindowDays || '—' }} ngày · {{ formatDate(report.createdAt) }} · {{ report.model }}</p></div><span class="pill pill-positive">{{ statusLabel(report.status) }}</span></div><div class="grid grid-3" style="margin-top:18px"><div class="glass-soft panel-tight"><div class="kpi-label">Token đầu vào</div><div class="kpi-value">{{ formatNumber(report.inputTokens) }}</div></div><div class="glass-soft panel-tight"><div class="kpi-label">Token đầu ra</div><div class="kpi-value">{{ formatNumber(report.outputTokens) }}</div></div><div class="glass-soft panel-tight"><div class="kpi-label">Định dạng</div><div class="kpi-value" style="font-size:16px">{{ report.format || '—' }}</div></div></div></section>
+    <section class="glass panel report-section" v-if="contentHtml">
+      <div class="panel-header"><div><h2 class="panel-title">Nội dung báo cáo</h2></div><span class="pill pill-neutral">Báo cáo AI</span></div>
+      <div v-if="format === 'markdown'" class="report-content" v-html="contentHtml"></div>
+      <pre v-else-if="format === 'json'" class="report-json">{{ rawContent }}</pre>
+      <div v-else class="report-plain">{{ rawContent }}</div>
+    </section>
+    <section v-else-if="rawContent" class="glass panel report-section">
+      <div class="panel-header"><div><h2 class="panel-title">Nội dung báo cáo</h2></div></div>
+      <div class="report-plain">{{ rawContent }}</div>
+    </section>
+  </template>
+</main><script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script><script type="module" src="/js/ai-analysis.js?v=flexible-report"></script></body></html>

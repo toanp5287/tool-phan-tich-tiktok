@@ -1,0 +1,21 @@
+{
+  "group": "categories",
+  "runId": "0198395e-e532-4b47-8a2d-4f919712782a",
+  "endpoints": [
+    "/api/v3/echotik/category/l1",
+    "/api/v3/echotik/category/l2"
+  ],
+  "requestsUsed": 0,
+  "requestsReserved": 0,
+  "requestsMax": 15,
+  "pages": 0,
+  "received": 0,
+  "created": 0,
+  "updated": 0,
+  "skipped": 0,
+  "failed": 0,
+  "quotaRemaining": null,
+  "status": "BLOCKED",
+  "errors": [],
+  "startedAt": "2026-11-06T20:20:24.687Z"
+}

@@ -1,0 +1,21 @@
+{
+  "group": "products",
+  "runId": "62eee8e1-f5f0-4eef-8cb3-ab189d7794a2",
+  "endpoints": [
+    "/api/v3/echotik/product/list"
+  ],
+  "requestsUsed": 14,
+  "requestsReserved": 14,
+  "requestsMax": 15,
+  "pages": 14,
+  "received": 150,
+  "created": 150,
+  "updated": 0,
+  "skipped": 0,
+  "failed": 0,
+  "quotaRemaining": 20,
+  "status": "SUCCESS",
+  "errors": [],
+  "startedAt": "2026-11-06T20:23:19.236Z",
+  "finishedAt": "2026-11-06T20:23:27.310Z"
+}

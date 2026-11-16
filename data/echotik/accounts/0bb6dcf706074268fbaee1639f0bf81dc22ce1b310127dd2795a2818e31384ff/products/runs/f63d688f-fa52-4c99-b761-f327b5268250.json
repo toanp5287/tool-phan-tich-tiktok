@@ -1,0 +1,22 @@
+{
+  "group": "products",
+  "runId": "f63d688f-fa52-4c99-b761-f327b5268250",
+  "endpoints": [
+    "/api/v3/echotik/product/list"
+  ],
+  "requestsUsed": 0,
+  "requestsMax": 15,
+  "pages": 0,
+  "received": 0,
+  "created": 0,
+  "updated": 0,
+  "skipped": 0,
+  "failed": 1,
+  "quotaRemaining": 50,
+  "status": "FAILED",
+  "errors": [
+    "page 1: \nInvalid `prisma.$queryRaw()` invocation:\n\n\nRaw query failed. Code: `42725`. Message: `operator is not unique: unknown + unknown`"
+  ],
+  "startedAt": "2026-11-06T19:59:17.488Z",
+  "finishedAt": "2026-11-06T19:59:19.040Z"
+}

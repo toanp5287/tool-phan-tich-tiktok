@@ -1,0 +1,2 @@
+{"requestId":"ebb46fc5-8012-43b7-815c-1e4fba5238ee","endpoint":"/api/v3/echotik/category/l1?language=vi-VN","phase":"intent","timestamp":"2026-11-06T20:12:40.822Z"}
+{"requestId":"ebb46fc5-8012-43b7-815c-1e4fba5238ee","endpoint":"/api/v3/echotik/category/l1?language=vi-VN","phase":"error","httpStatus":null,"message":"\nInvalid `prisma.$queryRaw()` invocation:\n\n\nRaw query failed. Code: `42725`. Message: `operator is not unique: unknown + unknown`","timestamp":"2026-11-06T20:12:40.838Z"}

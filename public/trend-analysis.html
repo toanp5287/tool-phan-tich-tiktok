@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Phân tích xu hướng ngành hàng và so sánh đa kỳ trên TikTok Shop" />
+    <title>Xu hướng ngành hàng | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/trend-analysis.js" defer></script>
+    <style>
+      .trend-arrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+        font-size: 11.5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .trend-arrow.is-up {
+        color: #34d399;
+        background: rgba(52, 211, 153, 0.14);
+        border: 1px solid rgba(52, 211, 153, 0.32);
+      }
+      .trend-arrow.is-down {
+        color: #fb7185;
+        background: rgba(251, 113, 133, 0.14);
+        border: 1px solid rgba(251, 113, 133, 0.32);
+      }
+      .trend-arrow.is-flat {
+        color: #94a3b8;
+        background: rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.26);
+      }
+      .compare-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+      .compare-cell {
+        background: rgba(148, 163, 184, 0.07);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 12px;
+        padding: 12px 14px;
+      }
+      .compare-cell .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted, #94a3b8);
+        margin-bottom: 6px;
+      }
+      .compare-cell .current {
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .compare-cell .previous {
+        font-size: 11.5px;
+        color: #94a3b8;
+        margin-top: 2px;
+      }
+      .period-switch {
+        display: inline-flex;
+        gap: 4px;
+        background: rgba(148, 163, 184, 0.1);
+        padding: 3px;
+        border-radius: 10px;
+      }
+      .period-switch button {
+        border: 0;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 11px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .period-switch button.is-active {
+        background: rgba(255, 45, 111, 0.18);
+        color: #fff;
+      }
+      .trend-table th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .trend-table td {
+        font-size: 12.5px;
+        vertical-align: middle;
+      }
+      .trend-delta {
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .trend-delta.is-up { color: #34d399; }
+      .trend-delta.is-down { color: #fb7185; }
+      .trend-delta.is-flat { color: #94a3b8; }
+      .trend-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11.5px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.12);
+        color: #cbd5e1;
+      }
+      .trend-split {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        gap: 18px;
+      }
+      @media (max-width: 1000px) {
+        .trend-split { grid-template-columns: 1fr; }
+      }
+      .mini-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .mini-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 11px;
+        background: rgba(148, 163, 184, 0.07);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+      }
+      .mini-item .name {
+        font-size: 12.5px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .mini-item .sub {
+        font-size: 10.5px;
+        color: #94a3b8;
+      }
+    </style>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 17l6-6 4 4 8-8" />
+              <path d="M21 7h-5v5" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-name">Xu hướng ngành hàng</h1>
+            <p class="brand-sub">So sánh đa kỳ &amp; mũi tên chỉ thị tăng trưởng</p>
+          </div>
+        </div>
+
+
+
+        <div class="segmented" role="group" aria-label="Khoảng thời gian mỗi kỳ">
+          <button v-for="option in rangeOptions" :key="option" :class="{ 'is-active': days === option }" @click="setDays(option)">
+            {{ option }}N
+          </button>
+        </div>
+      </header>
+
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <template v-if="selectedCategory">
+          <a href="/trend-analysis.html">Xu hướng ngành hàng</a>
+          <span>/</span>
+          <span class="is-current">{{ selectedCategory }}</span>
+        </template>
+        <span v-else class="is-current">Tất cả ngành hàng</span>
+      </nav>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Không tải được dữ liệu xu hướng.</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-left: auto" @click="reload">Thử lại</button>
+      </div>
+
+      <div class="row-between" style="flex-wrap: wrap; gap: 10px">
+        <div class="row" style="gap: 10px; align-items: center">
+          <span class="muted" style="font-size: 12px">Số kỳ so sánh</span>
+          <div class="period-switch" role="group" aria-label="Số kỳ">
+            <button v-for="count in periodOptions" :key="count" :class="{ 'is-active': periods === count }" @click="setPeriods(count)">
+              {{ count }} kỳ
+            </button>
+          </div>
+        </div>
+        <div class="row" style="gap: 8px; align-items: center" v-if="periodOptions">
+          <span class="trend-chip" v-for="period in periodsMeta" :key="period.index">
+            {{ period.index === 0 ? "Hiện tại" : `Kỳ -${period.index}` }}: {{ period.start }} → {{ period.end }}
+          </span>
+        </div>
+      </div>
+
+      <!-- ================= KPI ================= -->
+      <section class="grid grid-kpi">
+        <article class="kpi">
+          <div class="kpi-label">GMV kỳ hiện tại</div>
+          <p class="kpi-value">{{ formatCurrency(totals.gmv.current, { compact: true }) }}</p>
+          <div class="kpi-foot">
+            <span :class="arrowClass(totals.gmv.direction)">
+              {{ arrowIcon(totals.gmv.direction) }} {{ formatPercent(totals.gmv.changePercent, { sign: true }) }}
+            </span>
+            <span class="muted" style="font-size: 11px">kỳ trước {{ formatCurrency(totals.gmv.previous, { compact: true }) }}</span>
+          </div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Sản lượng bán</div>
+          <p class="kpi-value">{{ formatNumber(totals.sales.current) }}</p>
+          <div class="kpi-foot">
+            <span :class="arrowClass(totals.sales.direction)">
+              {{ arrowIcon(totals.sales.direction) }} {{ formatSigned(totals.sales.diff) }}
+            </span>
+            <span class="muted" style="font-size: 11px">{{ formatPercent(totals.sales.changePercent, { sign: true }) }}</span>
+          </div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Lượt xem</div>
+          <p class="kpi-value">{{ formatCompact(totals.views.current) }}</p>
+          <div class="kpi-foot">
+            <span :class="arrowClass(totals.views.direction)">
+              {{ arrowIcon(totals.views.direction) }} {{ formatPercent(totals.views.changePercent, { sign: true }) }}
+            </span>
+            <span class="muted" style="font-size: 11px">trước {{ formatCompact(totals.views.previous) }}</span>
+          </div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-label">Danh mục đang lên</div>
+          <p class="kpi-value">{{ upCount }}/{{ rows.length }}</p>
+          <div class="kpi-foot">
+            <span class="trend-arrow is-up">▲ {{ upCount }} tăng</span>
+            <span class="trend-arrow is-down">▼ {{ downCount }} giảm</span>
+            <span class="trend-arrow is-flat">→ {{ flatCount }} đi ngang</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- ================= Bảng so sánh đa kỳ ================= -->
+      <section class="glass">
+        <div class="panel-header" style="padding: 20px 22px 0; margin-bottom: 12px">
+          <div>
+            <h2 class="panel-title">Bảng so sánh đa kỳ</h2>
+            <p class="panel-subtitle">
+              Đối chiếu số liệu song song giữa kỳ hiện tại và kỳ trước theo từng ngành hàng
+            </p>
+          </div>
+          <span class="muted" style="font-size: 11.5px">{{ days }} ngày/kỳ</span>
+        </div>
+
+        <div class="table-wrap" style="margin: 0 22px 20px">
+          <table class="data trend-table">
+            <thead>
+              <tr>
+                <th style="min-width: 210px">Ngành hàng</th>
+                <th class="is-numeric">GMV hiện tại</th>
+                <th class="is-numeric">GMV kỳ trước</th>
+                <th class="is-numeric">Δ GMV</th>
+                <th class="is-numeric">Sản lượng</th>
+                <th class="is-numeric">Δ sản lượng</th>
+                <th class="is-numeric">Lượt xem</th>
+                <th class="is-numeric">Xu hướng</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading && rows.length === 0">
+                <td colspan="9">
+                  <div class="state"><span class="spinner"></span><span>Đang tính toán so sánh...</span></div>
+                </td>
+              </tr>
+              <tr v-else-if="rows.length === 0">
+                <td colspan="9">
+                  <div class="state" style="padding: 30px 12px">
+                    <span>Chưa có dữ liệu snapshot để so sánh.</span>
+                    <a class="btn btn-sm" href="/jobs.html">Chạy phiên cào</a>
+                  </div>
+                </td>
+              </tr>
+              <tr v-for="row in rows" :key="row.category" style="cursor: pointer" @click="openCategory(row.category)">
+                <td>
+                  <div style="font-weight: 600">{{ row.category }}</div>
+                  <div class="muted" style="font-size: 10.5px">Thị phần {{ formatPercent(row.shareOfGmv) }}</div>
+                </td>
+                <td class="is-numeric">{{ formatCurrency(row.metrics.gmv.current, { compact: true }) }}</td>
+                <td class="is-numeric muted">{{ formatCurrency(row.metrics.gmv.previous, { compact: true }) }}</td>
+                <td class="is-numeric">
+                  <span class="trend-delta" :class="'is-' + row.metrics.gmv.direction">
+                    {{ arrowIcon(row.metrics.gmv.direction) }} {{ formatPercent(row.metrics.gmv.changePercent, { sign: true }) }}
+                  </span>
+                </td>
+                <td class="is-numeric">{{ formatCompact(row.metrics.sales.current) }}</td>
+                <td class="is-numeric">
+                  <span class="trend-delta" :class="'is-' + row.metrics.sales.direction">
+                    {{ arrowIcon(row.metrics.sales.direction) }} {{ formatSigned(row.metrics.sales.diff) }}
+                  </span>
+                </td>
+                <td class="is-numeric">{{ formatCompact(row.metrics.views.current) }}</td>
+                <td class="is-numeric">
+                  <span class="trend-arrow" :class="arrowClass(row.metrics.gmv.direction)">
+                    {{ arrowIcon(row.metrics.gmv.direction) }} {{ directionLabel(row.metrics.gmv.direction) }}
+                  </span>
+                </td>
+                <td class="is-numeric muted" style="font-size: 11px">Xem →</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= Chi tiết ngành ================= -->
+      <section v-if="detail" class="stack">
+        <div class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">{{ detail.category }}</h2>
+              <p class="panel-subtitle">
+                Chi tiết xu hướng — thị phần GMV {{ formatPercent(detail.shareOfGmv) }}
+              </p>
+            </div>
+            <span class="trend-arrow" :class="arrowClass(detail.metrics.gmv.direction)">
+              {{ arrowIcon(detail.metrics.gmv.direction) }} GMV {{ formatPercent(detail.metrics.gmv.changePercent, { sign: true }) }}
+            </span>
+          </div>
+
+          <div class="compare-grid" style="padding: 0 22px 22px">
+            <div class="compare-cell" v-for="card in detailCards" :key="card.key">
+              <div class="label">{{ card.label }}</div>
+              <div class="current">{{ card.format(detail.metrics[card.key].current) }}</div>
+              <div class="previous">kỳ trước: {{ card.format(detail.metrics[card.key].previous) }}</div>
+              <div style="margin-top: 6px">
+                <span class="trend-delta" :class="'is-' + detail.metrics[card.key].direction">
+                  {{ arrowIcon(detail.metrics[card.key].direction) }}
+                  {{ card.formatDelta?.(detail.metrics[card.key]) ?? formatPercent(detail.metrics[card.key].changePercent, { sign: true }) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-frame" style="padding: 0 22px 22px">
+            <canvas ref="timelineCanvas" role="img" aria-label="Biểu đồ xu hướng theo ngày"></canvas>
+          </div>
+        </div>
+
+        <div class="trend-split">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Ngành con</h2>
+                <p class="panel-subtitle">So sánh kỳ hiện tại vs kỳ trước</p>
+              </div>
+            </div>
+            <div class="table-wrap" style="margin: 0 22px 20px">
+              <table class="data trend-table">
+                <thead>
+                  <tr>
+                    <th>Ngành con</th>
+                    <th class="is-numeric">GMV</th>
+                    <th class="is-numeric">Δ GMV</th>
+                    <th class="is-numeric">Xu hướng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="sub in detail.subCategories" :key="sub.name">
+                    <td>
+                      <div style="font-weight: 600">{{ sub.name }}</div>
+                      <div class="muted" style="font-size: 10.5px">Thị phần {{ formatPercent(sub.shareOfGmv) }}</div>
+                    </td>
+                    <td class="is-numeric">{{ formatCurrency(sub.metrics.gmv.current, { compact: true }) }}</td>
+                    <td class="is-numeric">
+                      <span class="trend-delta" :class="'is-' + sub.metrics.gmv.direction">
+                        {{ arrowIcon(sub.metrics.gmv.direction) }} {{ formatPercent(sub.metrics.gmv.changePercent, { sign: true }) }}
+                      </span>
+                    </td>
+                    <td class="is-numeric">
+                      <span class="trend-arrow" :class="arrowClass(sub.metrics.gmv.direction)">
+                        {{ arrowIcon(sub.metrics.gmv.direction) }} {{ directionLabel(sub.metrics.gmv.direction) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Hashtag nổi bật</h2>
+                <p class="panel-subtitle">Theo lượt xem kỳ hiện tại</p>
+              </div>
+            </div>
+            <div style="padding: 0 22px 20px">
+              <div v-if="detail.hashtags.length === 0" class="state" style="padding: 26px 8px">
+                <span>Hệ thống đang tích hợp dữ liệu cào đa tầng thực tế. Chưa có dữ liệu creator/video cho đợt quét này</span>
+              </div>
+              <div v-else class="mini-list">
+                <div v-for="tag in detail.hashtags.slice(0, 8)" :key="tag.hashtag" class="mini-item">
+                  <div style="min-width: 0">
+                    <div class="name">#{{ tag.hashtag }}</div>
+                    <div class="sub">{{ tag.count }} video · {{ formatCompact(tag.views) }} lượt xem</div>
+                  </div>
+                  <span class="trend-delta" :class="'is-' + tag.trend.direction">
+                    {{ arrowIcon(tag.trend.direction) }} {{ formatPercent(tag.trend.changePercent, { sign: true }) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="trend-split">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Top sản phẩm</h2>
+                <p class="panel-subtitle">Xếp theo GMV kỳ hiện tại</p>
+              </div>
+            </div>
+            <div class="table-wrap" style="margin: 0 22px 20px">
+              <table class="data trend-table">
+                <thead>
+                  <tr>
+                    <th style="min-width: 220px">Sản phẩm</th>
+                    <th class="is-numeric">Giá</th>
+                    <th class="is-numeric">Đã bán</th>
+                    <th class="is-numeric">GMV</th>
+                    <th class="is-numeric">Δ sản lượng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="product in detail.topProducts" :key="product.id">
+                    <td>
+                      <div style="font-weight: 600; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                        {{ product.title }}
+                      </div>
+                      <div class="muted" style="font-size: 10.5px">{{ product.shopName }}</div>
+                    </td>
+                    <td class="is-numeric">{{ formatCurrency(product.price, { compact: true }) }}</td>
+                    <td class="is-numeric">{{ formatCompact(product.sales) }}</td>
+                    <td class="is-numeric">{{ formatCurrency(product.gmv, { compact: true }) }}</td>
+                    <td class="is-numeric">
+                      <span class="trend-delta" :class="'is-' + product.salesTrend.direction">
+                        {{ arrowIcon(product.salesTrend.direction) }} {{ formatSigned(product.salesTrend.diff) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Âm thanh thịnh hành</h2>
+                <p class="panel-subtitle">Theo lượt xem kỳ hiện tại</p>
+              </div>
+            </div>
+            <div style="padding: 0 22px 20px">
+              <div v-if="detail.sounds.length === 0" class="state" style="padding: 26px 8px">
+                <span>Hệ thống đang tích hợp dữ liệu cào đa tầng thực tế. Chưa có dữ liệu creator/video cho đợt quét này</span>
+              </div>
+              <div v-else class="mini-list">
+                <div v-for="sound in detail.sounds.slice(0, 8)" :key="sound.name" class="mini-item">
+                  <div style="min-width: 0">
+                    <div class="name">{{ sound.name }}</div>
+                    <div class="sub">{{ sound.author || "Không rõ" }} · {{ sound.count }} video</div>
+                  </div>
+                  <span class="trend-delta" :class="'is-' + sound.trend.direction">
+                    {{ arrowIcon(sound.trend.direction) }} {{ formatPercent(sound.trend.changePercent, { sign: true }) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <article class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Top video xu hướng</h2>
+              <p class="panel-subtitle">Video có lượt xem cao nhất trong ngành (kỳ hiện tại)</p>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin: 0 22px 20px">
+            <table class="data trend-table">
+              <thead>
+                <tr>
+                  <th style="min-width: 300px">Nội dung</th>
+                  <th>Ngành con</th>
+                  <th class="is-numeric">Lượt xem</th>
+                  <th class="is-numeric">Lượt thích</th>
+                  <th class="is-numeric">Bình luận</th>
+                  <th class="is-numeric">Chia sẻ</th>
+                  <th class="is-numeric">Δ lượt xem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="detail.topVideos.length === 0">
+                  <td colspan="7"><div class="state" style="padding: 24px 8px"><span>Hệ thống đang tích hợp dữ liệu cào đa tầng thực tế. Chưa có dữ liệu creator/video cho đợt quét này</span></div></td>
+                </tr>
+                <tr v-for="video in detail.topVideos" :key="video.productId">
+                  <td style="max-width: 380px">
+                    <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ video.title }}</div>
+                    <div class="muted" style="font-size: 10.5px">{{ video.shopName }} · {{ video.bucketDate || "—" }}</div>
+                  </td>
+                  <td><span class="trend-chip">{{ video.subCategory }}</span></td>
+                  <td class="is-numeric">{{ formatCompact(video.playCount) }}</td>
+                  <td class="is-numeric">{{ formatCompact(video.diggCount) }}</td>
+                  <td class="is-numeric">{{ formatCompact(video.commentCount) }}</td>
+                  <td class="is-numeric">{{ formatCompact(video.shareCount) }}</td>
+                  <td class="is-numeric">
+                    <span class="trend-delta" :class="'is-' + video.viewTrend.direction">
+                      {{ arrowIcon(video.viewTrend.direction) }} {{ formatPercent(video.viewTrend.changePercent, { sign: true }) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section v-else-if="!loading" class="glass panel">
+        <div class="state" style="padding: 40px 12px">
+          <span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span>
+          <span>Chọn một ngành hàng trong bảng so sánh để xem chi tiết xu hướng.</span>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

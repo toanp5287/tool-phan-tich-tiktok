@@ -1,0 +1,70 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "601304",
+      "category_level": "2",
+      "category_name": "Khăn trùm đầu che đầu và cổ (Hijab)",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "601310",
+      "category_level": "2",
+      "category_name": "Trang phục phụ nữ Hồi giáo",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "601325",
+      "category_level": "2",
+      "category_name": "Trang phục đàn ông Hồi giáo",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "601331",
+      "category_level": "2",
+      "category_name": "Đồ mặc ngoài",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "601339",
+      "category_level": "2",
+      "category_name": "Trang phục trẻ em Hồi giáo",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "601343",
+      "category_level": "2",
+      "category_name": "Phụ kiện Hồi giáo",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "601348",
+      "category_level": "2",
+      "category_name": "Trang phục & trang bị cầu nguyện",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "838920",
+      "category_level": "2",
+      "category_name": "Đồ thể thao Hồi giáo",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    },
+    {
+      "category_id": "839176",
+      "category_level": "2",
+      "category_name": "Thiết bị Umroh",
+      "language": "vi-VN",
+      "parent_id": "601303"
+    }
+  ],
+  "requestId": "80720017-991a-407c-a037-0d6470de8cfb"
+}

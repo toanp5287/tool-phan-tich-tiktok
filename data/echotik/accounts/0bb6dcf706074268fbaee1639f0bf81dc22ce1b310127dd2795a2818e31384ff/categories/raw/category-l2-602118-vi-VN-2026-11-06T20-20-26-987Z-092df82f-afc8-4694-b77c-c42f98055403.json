@@ -1,0 +1,98 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "1001992",
+      "category_level": "2",
+      "category_name": "Vật tư cho gia cầm & gia súc",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "2315152",
+      "category_level": "2",
+      "category_name": "Thú cưng",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "812168",
+      "category_level": "2",
+      "category_name": "Thức ăn cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "812808",
+      "category_level": "2",
+      "category_name": "Nội thất cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "813960",
+      "category_level": "2",
+      "category_name": "Quần áo cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "815624",
+      "category_level": "2",
+      "category_name": "Cát vệ sinh cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "816392",
+      "category_level": "2",
+      "category_name": "Đồ chải chuốt cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "818184",
+      "category_level": "2",
+      "category_name": "Chăm sóc sức khỏe cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "818696",
+      "category_level": "2",
+      "category_name": "Phụ kiện cho chó & mèo",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "819848",
+      "category_level": "2",
+      "category_name": "Vật tư dành cho cá & loài sống dưới nước",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "821000",
+      "category_level": "2",
+      "category_name": "Vật tư dành cho bò sát & động vật lưỡng cư",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "821896",
+      "category_level": "2",
+      "category_name": "Vật tư dành cho chim",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    },
+    {
+      "category_id": "822792",
+      "category_level": "2",
+      "category_name": "Vật tư dành cho động vật nhỏ",
+      "language": "vi-VN",
+      "parent_id": "602118"
+    }
+  ],
+  "requestId": "0e6e84cd-8ba9-4ee3-9663-d274f0201329"
+}

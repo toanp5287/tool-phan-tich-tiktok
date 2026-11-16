@@ -1,0 +1,56 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "824840",
+      "category_level": "2",
+      "category_name": "Máy tính để bàn, Máy tính xách tay & Máy tính bảng",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    },
+    {
+      "category_id": "825352",
+      "category_level": "2",
+      "category_name": "Linh kiện máy tính để bàn & máy tính xách tay",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    },
+    {
+      "category_id": "826760",
+      "category_level": "2",
+      "category_name": "Thiết bị ngoại vi & Phụ kiện",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    },
+    {
+      "category_id": "828168",
+      "category_level": "2",
+      "category_name": "Phần mềm & Bộ nhớ",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    },
+    {
+      "category_id": "829192",
+      "category_level": "2",
+      "category_name": "Các thành phần mạng",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    },
+    {
+      "category_id": "830344",
+      "category_level": "2",
+      "category_name": "Thiết bị văn phòng",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    },
+    {
+      "category_id": "831112",
+      "category_level": "2",
+      "category_name": "Văn phòng phẩm & Vật tư",
+      "language": "vi-VN",
+      "parent_id": "601755"
+    }
+  ],
+  "requestId": "d5ceeb0c-89fc-44ca-a832-0865b8887b37"
+}

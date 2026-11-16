@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Chi tiết hiệu suất nhà sáng tạo / affiliate TikTok Shop" />
+    <title>Chi tiết nhà sáng tạo | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <header class="topbar">
+        <div class="brand">
+          <a class="brand-mark" href="/creators.html" aria-label="Về danh sách nhà sáng tạo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </a>
+          <div>
+            <h1 class="brand-name">Chi tiết nhà sáng tạo</h1>
+            <p class="brand-sub">{{ detail?.displayName || "Đang tải dữ liệu..." }}</p>
+          </div>
+        </div>
+
+
+
+        <div class="row">
+          <time-filter :model-value="rangeKey" @update:model-value="setRange" />
+        </div>
+      </header>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Không tải được dữ liệu nhà sáng tạo.</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+        <a class="btn btn-sm btn-ghost" style="margin-left: auto" href="/creators.html">Về danh sách</a>
+      </div>
+
+      <div v-if="loading && !detail" class="glass panel">
+        <div class="state"><span class="spinner"></span><span>Đang tải thông tin chi tiết...</span></div>
+      </div>
+
+      <template v-else-if="detail">
+        <section class="glass panel">
+          <div class="row-between" style="align-items: flex-start">
+            <div class="row" style="gap: 16px; align-items: flex-start">
+              <div class="avatar" style="width: 76px; height: 76px; border-radius: 20px; font-size: 24px">
+                <img :src="detail.avatarUrl" :alt="detail.displayName" data-fallback-kind="avatar" />
+              </div>
+              <div>
+                <div class="row" style="gap: 8px; flex-wrap: wrap">
+                  <span class="pill pill-accent">#{{ detail.id }}</span>
+                  <span class="pill" :class="detail.role === 'AFFILIATE' ? 'pill-accent' : 'pill-neutral'">{{ detail.role }}</span>
+                  <span class="pill pill-neutral">{{ detail.region }}</span>
+                  <span :class="growthClass(detail.growthRate)">
+                    {{ growthIcon(detail.growthRate) }} {{ formatPercent(detail.growthRate) }}
+                  </span>
+                </div>
+                <h2 style="margin: 10px 0 6px; font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; letter-spacing: -0.02em">
+                  {{ detail.displayName }}
+                </h2>
+                <div class="muted mono" style="font-size: 11.5px">
+                  {{ detail.username ? "@" + detail.username : "Chưa có username" }} · Bắt đầu theo dõi {{ formatDate(detail.firstSeenAt) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider" style="margin: 20px 0" />
+
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px">
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">GMV</div>
+              <div class="kpi-value" style="font-size: 20px; color: var(--positive)">{{ formatCurrency(detail.gmv, { compact: true }) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Đã bán</div>
+              <div class="kpi-value" style="font-size: 20px">{{ formatNumber(detail.soldCount) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Followers</div>
+              <div class="kpi-value" style="font-size: 20px">{{ formatCompact(detail.followerCount) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Engagement</div>
+              <div class="kpi-value" style="font-size: 20px">{{ formatPercent(detail.engagementRate) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Video</div>
+              <div class="kpi-value" style="font-size: 20px">{{ formatNumber(detail.videoCount) }}</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid grid-2">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Tăng trưởng GMV</h2>
+                <p class="panel-subtitle">Doanh thu ước tính theo ngày ({{ rangeLabel }})</p>
+              </div>
+            </div>
+            <div class="chart-frame is-sm">
+              <canvas ref="gmvCanvas" role="img" aria-label="Biểu đồ tăng trưởng GMV creator"></canvas>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Followers &amp; doanh số</h2>
+                <p class="panel-subtitle">Diễn biến lượng theo dõi và đơn bán</p>
+              </div>
+            </div>
+            <div class="chart-frame is-sm">
+              <canvas ref="followerCanvas" role="img" aria-label="Biểu đồ followers creator"></canvas>
+            </div>
+          </article>
+        </section>
+
+        <section class="grid grid-2">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Sản phẩm đang bán</h2>
+                <p class="panel-subtitle">Sắp theo GMV đóng góp</p>
+              </div>
+            </div>
+            <div v-if="detail.products.length === 0" class="state" style="padding: 32px 12px">
+              <span>Chưa ghi nhận sản phẩm gắn với creator này.</span>
+            </div>
+            <div v-else class="stack" style="gap: 10px">
+              <a
+                v-for="product in detail.products.slice(0, 10)"
+                :key="product.id"
+                class="glass-soft panel-tight row-between link-reset"
+                :href="`/detail.html?id=${product.id}&range=${rangeKey}`"
+                style="gap: 12px"
+              >
+                <div class="row" style="gap: 10px; min-width: 0">
+                  <div class="thumb" style="width: 36px; height: 36px; border-radius: 10px">
+                    <img :src="product.imageUrl" :alt="product.title" loading="lazy" data-fallback-kind="product" />
+                  </div>
+                  <div style="min-width: 0">
+                    <div class="cell-strong truncate">{{ product.title }}</div>
+                    <div class="muted" style="font-size: 11px">{{ product.category || "Chưa phân loại" }} · {{ product.shopName }}</div>
+                  </div>
+                </div>
+                <div style="text-align: right">
+                  <div class="num" style="color: var(--positive); font-weight: 600">{{ formatCurrency(product.gmv, { compact: true }) }}</div>
+                  <span class="muted" style="font-size: 10.5px">{{ formatNumber(product.sales) }} đã bán</span>
+                </div>
+              </a>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Cửa hàng liên kết</h2>
+                <p class="panel-subtitle">Shop mà creator đang cộng tác</p>
+              </div>
+            </div>
+            <div v-if="detail.shops.length === 0" class="state" style="padding: 32px 12px">
+              <span>Chưa ghi nhận shop liên kết.</span>
+            </div>
+            <div v-else class="stack" style="gap: 10px">
+              <a
+                v-for="shop in detail.shops"
+                :key="shop.id"
+                class="glass-soft panel-tight row-between link-reset"
+                :href="`/shop-detail.html?id=${shop.id}&range=${rangeKey}`"
+                style="gap: 12px"
+              >
+                <div class="row" style="gap: 10px; min-width: 0">
+                  <div class="avatar">
+                    <img :src="shop.avatarUrl" :alt="shop.name" loading="lazy" data-fallback-kind="avatar" />
+                  </div>
+                  <div class="cell-strong truncate">{{ shop.name }}</div>
+                </div>
+                <span class="num" style="color: var(--positive); font-weight: 600">{{ formatCurrency(shop.gmv, { compact: true }) }}</span>
+              </a>
+            </div>
+          </article>
+        </section>
+
+        <section class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Video xu hướng của creator</h2>
+              <p class="panel-subtitle">Video có lượt xem cao nhất gắn với creator</p>
+            </div>
+          </div>
+
+          <div v-if="detail.trendVideos.length === 0" class="state" style="padding: 32px 12px">
+            <span>Hệ thống đang tích hợp dữ liệu cào đa tầng thực tế. Chưa có dữ liệu creator/video cho đợt quét này</span>
+          </div>
+
+          <div v-else class="video-grid">
+            <component
+              :is="video.videoUrl ? 'a' : 'div'"
+              v-for="video in detail.trendVideos"
+              :key="video.id"
+              class="video-card fade-in"
+              :href="video.videoUrl || undefined"
+              :target="video.videoUrl ? '_blank' : undefined"
+              :rel="video.videoUrl ? 'noopener noreferrer' : undefined"
+            >
+              <div class="video-thumb">
+                <span style="font-size: 28px">▶</span>
+                <span class="views-chip">{{ formatCompact(video.playCount) }}</span>
+              </div>
+              <div class="video-body">
+                <div class="video-title">{{ video.content }}</div>
+                <div class="video-stats">
+                  <span>♥ {{ formatCompact(video.diggCount) }}</span>
+                  <span>💬 {{ formatCompact(video.commentCount) }}</span>
+                  <span title="Chia sẻ">Chia sẻ {{ formatCompact(video.shareCount) }}</span>
+                </div>
+                <div class="row-between" style="font-size: 11px">
+                  <span class="pill pill-neutral" style="font-size: 10px">Engagement {{ formatPercent(video.engagementRate) }}</span>
+                  <span class="muted">{{ formatDate(video.scrapedAt) }}</span>
+                </div>
+              </div>
+            </component>
+          </div>
+        </section>
+      </template>
+
+      <div v-else-if="!loading" class="glass panel">
+        <div class="state" style="padding: 64px 16px">
+          <strong>Không tìm thấy nhà sáng tạo</strong>
+          <span class="muted">Creator có thể đã bị xoá hoặc ID không hợp lệ.</span>
+          <a class="btn btn-sm" href="/creators.html">Về danh sách</a>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/creator.js"></script>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "851848",
+      "category_level": "2",
+      "category_name": "Đồ đựng trong nhà",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    },
+    {
+      "category_id": "851976",
+      "category_level": "2",
+      "category_name": "Đồ dùng phòng tắm",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    },
+    {
+      "category_id": "852104",
+      "category_level": "2",
+      "category_name": "Trang trí nội thất",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    },
+    {
+      "category_id": "852232",
+      "category_level": "2",
+      "category_name": "Đồ dùng chăm sóc nhà cửa",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    },
+    {
+      "category_id": "852360",
+      "category_level": "2",
+      "category_name": "Dụng cụ & phụ kiện giặt là",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    },
+    {
+      "category_id": "852488",
+      "category_level": "2",
+      "category_name": "Đồ dùng cho lễ hội & bữa tiệc",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    },
+    {
+      "category_id": "852616",
+      "category_level": "2",
+      "category_name": "Đồ gia dụng khác",
+      "language": "vi-VN",
+      "parent_id": "600001"
+    }
+  ],
+  "requestId": "1ffe1ece-96ba-48f0-afb4-90dca15afbb5"
+}

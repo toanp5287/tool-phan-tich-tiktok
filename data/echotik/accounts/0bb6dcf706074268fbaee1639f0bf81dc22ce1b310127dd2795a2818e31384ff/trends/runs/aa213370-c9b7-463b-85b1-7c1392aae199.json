@@ -1,0 +1,21 @@
+{
+  "group": "trends",
+  "runId": "aa213370-c9b7-463b-85b1-7c1392aae199",
+  "endpoints": [
+    "/api/v3/echotik/product/trend"
+  ],
+  "requestsUsed": 15,
+  "requestsReserved": 15,
+  "requestsMax": 15,
+  "pages": 15,
+  "received": 38,
+  "created": 0,
+  "updated": 5,
+  "skipped": 1,
+  "failed": 0,
+  "quotaRemaining": 5,
+  "status": "LIMIT_REACHED",
+  "errors": [],
+  "startedAt": "2026-11-06T20:25:39.709Z",
+  "finishedAt": "2026-11-06T20:25:42.397Z"
+}

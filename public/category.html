@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Chi tiết ngành hàng và các ngành con trên TikTok Shop" />
+    <title>Chi tiết ngành hàng | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <header class="topbar">
+        <div class="brand">
+          <a class="brand-mark" href="/categories.html" aria-label="Về danh sách ngành hàng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </a>
+          <div>
+            <h1 class="brand-name">{{ categoryName || "Ngành hàng" }}</h1>
+            <p class="brand-sub">Cấp 2 · Các dòng sản phẩm (ngành con) thuộc ngành chính</p>
+          </div>
+        </div>
+
+
+
+        <time-filter :model-value="rangeKey" @update:model-value="setRange" />
+      </header>
+
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/categories.html">Ngành hàng</a>
+        <span class="sep">/</span>
+        <span class="is-current">{{ categoryName || "—" }}</span>
+      </nav>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Không tải được dữ liệu ngành hàng.</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+        <a class="btn btn-sm btn-ghost" style="margin-left: auto" href="/categories.html">Về danh sách</a>
+      </div>
+
+      <div v-if="loading && !detail" class="glass panel">
+        <div class="state"><span class="spinner"></span><span>Đang tổng hợp dữ liệu ngành...</span></div>
+      </div>
+
+      <template v-if="detail">
+        <div v-if="detail.hasData === false" class="glass panel">Danh mục đã có trong PostgreSQL; chưa có snapshot thống kê cho kỳ này.</div>
+        <section class="grid grid-kpi">
+          <article class="kpi">
+            <div class="kpi-label">GMV ngành</div>
+            <p class="kpi-value" style="color: var(--positive)">{{ formatCurrency(detail.totalGmv, { compact: true }) }}</p>
+            <div class="kpi-foot">
+              <span :class="growthClass(detail.growthRate)">{{ growthIcon(detail.growthRate) }} {{ formatPercent(detail.growthRate, { sign: true }) }}</span>
+              <span>lượt bán so với kỳ trước</span>
+            </div>
+          </article>
+          <article class="kpi">
+            <div class="kpi-label">Đã bán</div>
+            <p class="kpi-value">{{ formatNumber(detail.totalSales) }}</p>
+            <div class="kpi-foot"><span class="muted">Giá TB {{ formatCurrency(detail.avgPrice) }}</span></div>
+          </article>
+          <article class="kpi">
+            <div class="kpi-label">Ngành con</div>
+            <p class="kpi-value">{{ detail.subCategories.length }}</p>
+            <div class="kpi-foot"><span class="muted">{{ formatNumber(detail.productCount) }} sản phẩm</span></div>
+          </article>
+          <article class="kpi">
+            <div class="kpi-label">Nhà bán hàng</div>
+            <p class="kpi-value">{{ formatNumber(detail.shopCount) }}</p>
+            <div class="kpi-foot"><span class="muted">{{ formatCompact(detail.totalViews) }} lượt xem</span></div>
+          </article>
+        </section>
+
+        <section class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Biểu đồ tăng trưởng GMV</h2>
+              <p class="panel-subtitle">Tổng GMV luỹ kế của ngành theo ngày ({{ rangeLabel }})</p>
+            </div>
+          </div>
+          <div class="chart-frame">
+            <canvas ref="timelineCanvas" role="img" aria-label="Biểu đồ tăng trưởng GMV ngành"></canvas>
+          </div>
+        </section>
+
+        <section class="grid grid-2">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">So sánh ngành con</h2>
+                <p class="panel-subtitle">GMV và lượt bán theo từng dòng sản phẩm</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas ref="subCanvas" role="img" aria-label="Biểu đồ so sánh ngành con"></canvas>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Danh sách ngành con</h2>
+                <p class="panel-subtitle">Chọn để xem top shop (cấp 3)</p>
+              </div>
+            </div>
+            <div class="stack" style="gap: 10px">
+              <a
+                v-for="(sub, index) in detail.subCategories"
+                :key="sub.name"
+                class="glass-soft panel-tight link-reset row-between fade-in"
+                :href="`${subCategoryUrl(detail.category, sub.name)}&range=${rangeKey}`"
+                style="gap: 12px"
+              >
+                <div class="row" style="gap: 10px; min-width: 0">
+                  <span class="rank-badge" :class="{ 'is-top': index === 0 }">{{ index + 1 }}</span>
+                  <div style="min-width: 0">
+                    <div class="cell-strong truncate">{{ sub.name }}</div>
+                    <div class="muted" style="font-size: 11px">
+                      {{ sub.productCount }} SP · {{ sub.shopCount }} shop · {{ formatPercent(sub.shareOfGmv) }} GMV
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align: right">
+                  <div class="num" style="color: var(--positive); font-weight: 600">{{ formatCurrency(sub.totalGmv, { compact: true }) }}</div>
+                  <span :class="growthClass(sub.growthRate)" style="font-size: 10.5px">
+                    {{ growthIcon(sub.growthRate) }} {{ formatPercent(sub.growthRate) }}
+                  </span>
+                </div>
+              </a>
+            </div>
+          </article>
+        </section>
+
+        <section class="glass">
+          <div class="panel-header" style="padding: 20px 22px 0; margin-bottom: 14px">
+            <div>
+              <h2 class="panel-title">Top sản phẩm của ngành</h2>
+              <p class="panel-subtitle">Xếp theo GMV ước tính</p>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin: 0 22px">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th style="min-width: 260px">Sản phẩm</th>
+                  <th>Ngành con</th>
+                  <th>Shop</th>
+                  <th class="is-numeric">Giá</th>
+                  <th class="is-numeric">Đã bán</th>
+                  <th class="is-numeric">GMV</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="product in detail.topProducts" :key="product.id">
+                  <td>
+                    <div class="cell-title">
+                      <div class="thumb">
+                        <img :src="product.imageUrl" :alt="product.title" loading="lazy" data-fallback-kind="product" />
+                      </div>
+                      <div class="cell-title-text" :title="product.title">{{ product.title }}</div>
+                    </div>
+                  </td>
+                  <td>
+                    <a class="pill pill-neutral link-reset" :href="`${subCategoryUrl(detail.category, product.subCategory)}&range=${rangeKey}`">{{ product.subCategory }}</a>
+                  </td>
+                  <td>
+                    <a v-if="product.shopId" class="secondary link-reset truncate" style="max-width: 140px; display: inline-block" :href="shopUrl(product.shopId, { category: detail.category, subCategory: product.subCategory })">
+                      {{ product.shopName }}
+                    </a>
+                    <span v-else class="muted">{{ product.shopName }}</span>
+                  </td>
+                  <td class="is-numeric">{{ formatCurrency(product.price) }}</td>
+                  <td class="is-numeric">{{ formatNumber(product.sales) }}</td>
+                  <td class="is-numeric" style="color: var(--positive); font-weight: 600">{{ formatCurrency(product.gmv, { compact: true }) }}</td>
+                  <td style="text-align: right"><a class="btn btn-sm" :href="`/detail.html?id=${product.id}&range=${rangeKey}`">Chi tiết</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="height: 20px"></div>
+        </section>
+      </template>
+    </div>
+
+    <script type="module" src="/js/category.js"></script>
+  </body>
+</html>

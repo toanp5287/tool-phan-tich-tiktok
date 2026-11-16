@@ -1,0 +1,70 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "1091208",
+      "category_level": "2",
+      "category_name": "Quần áo nữ cỡ lớn",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "2337680",
+      "category_level": "2",
+      "category_name": "Quần áo Nam Á cho nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "842248",
+      "category_level": "2",
+      "category_name": "Áo nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "842376",
+      "category_level": "2",
+      "category_name": "Quần nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "842504",
+      "category_level": "2",
+      "category_name": "Váy nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "842632",
+      "category_level": "2",
+      "category_name": "Trang phục đặc biệt dành cho nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "842760",
+      "category_level": "2",
+      "category_name": "Bộ vét và quần yếm nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "842888",
+      "category_level": "2",
+      "category_name": "Đồ lót nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    },
+    {
+      "category_id": "843016",
+      "category_level": "2",
+      "category_name": "Đồ ngủ nữ",
+      "language": "vi-VN",
+      "parent_id": "601152"
+    }
+  ],
+  "requestId": "886b5fb4-b6dc-4aaf-bc05-c587144504dc"
+}

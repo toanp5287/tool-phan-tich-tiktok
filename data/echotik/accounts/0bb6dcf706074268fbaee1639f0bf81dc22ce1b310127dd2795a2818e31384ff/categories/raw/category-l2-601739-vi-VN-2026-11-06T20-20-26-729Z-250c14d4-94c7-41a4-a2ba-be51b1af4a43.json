@@ -1,0 +1,84 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "2108944",
+      "category_level": "2",
+      "category_name": "Thiết bị thông minh và có thể đeo",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "2109072",
+      "category_level": "2",
+      "category_name": "Thiết bị điện tử đã được tái chế",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "909064",
+      "category_level": "2",
+      "category_name": "Phụ kiện điện thoại",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "909192",
+      "category_level": "2",
+      "category_name": "Camera & Nhiếp ảnh",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "909320",
+      "category_level": "2",
+      "category_name": "Âm thanh & Video",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "909448",
+      "category_level": "2",
+      "category_name": "Chơi game & Bảng điều khiển",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "909576",
+      "category_level": "2",
+      "category_name": "Thiết bị thông minh & Thiết bị đeo",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "909704",
+      "category_level": "2",
+      "category_name": "Thiết bị giáo dục",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "978952",
+      "category_level": "2",
+      "category_name": "Phụ kiện đa năng",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "984584",
+      "category_level": "2",
+      "category_name": "Phụ kiện máy tính bảng & máy tính",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    },
+    {
+      "category_id": "995976",
+      "category_level": "2",
+      "category_name": "Điện thoại & Máy tính bảng",
+      "language": "vi-VN",
+      "parent_id": "601739"
+    }
+  ],
+  "requestId": "e514ad5d-f913-433c-ad18-2016f6bf221a"
+}

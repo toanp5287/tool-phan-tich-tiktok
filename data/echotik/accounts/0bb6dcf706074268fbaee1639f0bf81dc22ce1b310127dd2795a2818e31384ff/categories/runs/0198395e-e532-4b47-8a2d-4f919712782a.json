@@ -1,0 +1,22 @@
+{
+  "group": "categories",
+  "runId": "0198395e-e532-4b47-8a2d-4f919712782a",
+  "endpoints": [
+    "/api/v3/echotik/category/l1",
+    "/api/v3/echotik/category/l2"
+  ],
+  "requestsUsed": 15,
+  "requestsReserved": 15,
+  "requestsMax": 15,
+  "pages": 15,
+  "received": 134,
+  "created": 0,
+  "updated": 0,
+  "skipped": 118,
+  "failed": 0,
+  "quotaRemaining": 34,
+  "status": "LIMIT_REACHED",
+  "errors": [],
+  "startedAt": "2026-11-06T20:20:24.687Z",
+  "finishedAt": "2026-11-06T20:20:27.183Z"
+}

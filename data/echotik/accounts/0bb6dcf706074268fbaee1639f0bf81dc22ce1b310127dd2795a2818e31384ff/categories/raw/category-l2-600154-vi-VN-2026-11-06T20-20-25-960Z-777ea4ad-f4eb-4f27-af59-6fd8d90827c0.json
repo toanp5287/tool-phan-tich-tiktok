@@ -1,0 +1,28 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "category_id": "808328",
+      "category_level": "2",
+      "category_name": "Chăn ga gối đệm",
+      "language": "vi-VN",
+      "parent_id": "600154"
+    },
+    {
+      "category_id": "809992",
+      "category_level": "2",
+      "category_name": "Hàng dệt gia dụng",
+      "language": "vi-VN",
+      "parent_id": "600154"
+    },
+    {
+      "category_id": "811016",
+      "category_level": "2",
+      "category_name": "Vải & Đồ may",
+      "language": "vi-VN",
+      "parent_id": "600154"
+    }
+  ],
+  "requestId": "8d3d381c-b811-4c31-9bab-c072ac659404"
+}

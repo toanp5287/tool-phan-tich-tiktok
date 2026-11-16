@@ -1,0 +1,19 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/src/generated/prisma
+
+# Task lock của tiến trình cào (tránh commit khi lỡ tắt máy giữa chừng)
+.scrape.lock
+node_modules/
+.env
+.env.*
+!.env.example
+
+dist/
+coverage/
+
+chrome-profile/
+backups/
+datasets/

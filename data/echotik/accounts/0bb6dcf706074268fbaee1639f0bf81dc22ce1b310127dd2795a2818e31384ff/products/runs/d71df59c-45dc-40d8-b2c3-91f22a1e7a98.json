@@ -1,0 +1,24 @@
+{
+  "group": "products",
+  "runId": "d71df59c-45dc-40d8-b2c3-91f22a1e7a98",
+  "endpoints": [
+    "/api/v3/echotik/product/list"
+  ],
+  "requestsUsed": 1,
+  "requestsReserved": 1,
+  "requestsMax": 15,
+  "pages": 1,
+  "received": 10,
+  "created": 0,
+  "updated": 0,
+  "skipped": 0,
+  "failed": 2,
+  "quotaRemaining": 49,
+  "status": "FAILED",
+  "errors": [
+    "page 1 row 1: required product_id, title, or seller_id is missing",
+    "page 1: required product_id, title, or seller_id is missing"
+  ],
+  "startedAt": "2026-11-06T20:16:00.832Z",
+  "finishedAt": "2026-11-06T20:16:02.318Z"
+}

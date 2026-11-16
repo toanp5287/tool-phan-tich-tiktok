@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Phân tích chuyên sâu sản phẩm TikTok Shop" />
+    <title>Chi tiết sản phẩm | TikTok E-Commerce Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/app.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js" defer></script>
+    <script type="module" src="/js/image-fallback.js"></script>
+  </head>
+  <body>
+    <div id="app" v-cloak class="app-shell stack">
+      <!-- ================= TOP BAR ================= -->
+      <header class="topbar">
+        <div class="brand">
+          <a class="brand-mark" href="/shop.html" aria-label="Về trang tổng quan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </a>
+          <div>
+            <h1 class="brand-name">Phân tích chi tiết</h1>
+            <p class="brand-sub">{{ product?.title || "Đang tải dữ liệu sản phẩm..." }}</p>
+          </div>
+        </div>
+
+
+
+        <div class="row">
+          <time-filter :model-value="rangeKey" @update:model-value="setRange" />
+          <a v-if="product?.productUrl" class="btn btn-primary" :href="product.productUrl" target="_blank" rel="noopener">
+            Xem video gốc
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M7 17 17 7M9 7h8v8" />
+            </svg>
+          </a>
+          <button v-if="product" class="btn btn-primary ai-analysis-button" type="button" :disabled="aiLoading" @click="runAiAnalysis(false)">
+            <span v-if="aiLoading" class="spinner" aria-hidden="true"></span>
+            {{ aiLoading ? "Đang phân tích AI..." : "Phân tích AI" }}
+          </button>
+          <a v-if="aiReport" class="btn" :href="`/ai-analysis.html?id=${aiReport.id}&productId=${product.id}`">Báo cáo AI gần nhất</a>
+        </div>
+      </header>
+
+      <div v-if="aiError" class="banner" role="alert"><span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div>{{ aiError }}</div></div>
+
+      <div v-if="error" class="banner">
+        <span class="banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+        <div>
+          <strong>Không tải được dữ liệu sản phẩm.</strong>
+          <div class="muted">{{ error }}</div>
+        </div>
+      </div>
+
+      <div v-if="loading" class="glass panel">
+        <div class="state"><span class="spinner"></span><span>Đang tải thông tin chi tiết...</span></div>
+      </div>
+
+      <template v-else-if="product">
+        <section v-if="aiHistory.length" class="glass panel">
+          <div class="panel-header"><div><h2 class="panel-title">Báo cáo AI đã lưu</h2><p class="panel-subtitle">Mở báo cáo cũ mà không gọi Gemini</p></div></div>
+          <div class="row" style="flex-wrap: wrap">
+            <a v-for="report in aiHistory" :key="report.id" class="btn btn-sm" :href="`/ai-analysis.html?id=${report.id}&productId=${product.id}`">
+              {{ formatDate(report.createdAt, "long") }} · {{ report.status === "COMPLETED" ? "HOÀN THÀNH" : report.status === "RUNNING" ? "ĐANG PHÂN TÍCH" : report.status === "FAILED" ? "THẤT BẠI" : "KHÔNG XÁC ĐỊNH" }}
+            </a>
+          </div>
+          <button class="btn btn-sm btn-ghost" type="button" :disabled="aiLoading" @click="runAiAnalysis(true)">Phân tích lại</button>
+        </section>
+        <!-- ================= HERO ================= -->
+        <section class="glass panel">
+          <div class="row-between" style="align-items: flex-start">
+            <div class="cell-title" style="align-items: flex-start; gap: 16px">
+              <div class="thumb" style="width: 84px; height: 84px; border-radius: 18px; font-size: 26px">
+                <img :src="product.imageUrl" :alt="product.title" data-fallback-kind="product" />
+              </div>
+              <div>
+                <div class="row" style="gap: 8px; flex-wrap: wrap">
+                  <span class="pill pill-accent">#{{ product.id }}</span>
+                  <span class="pill pill-neutral">{{ product.category || "Chưa phân loại" }}</span>
+                  <span class="pill pill-neutral">{{ product.region }} · {{ product.currency }}</span>
+                </div>
+                <h2 style="margin: 10px 0 6px; font-size: clamp(18px, 2.2vw, 24px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.35">
+                  {{ product.title }}
+                </h2>
+                <div class="row" style="gap: 8px; flex-wrap: wrap">
+                  <a v-if="product.shopId" class="row link-reset" :href="`/shop-detail.html?id=${product.shopId}`" style="gap: 8px">
+                    <div class="avatar" style="width: 24px; height: 24px; font-size: 9px">
+                      <img :src="product.shopAvatarUrl" :alt="product.shopName" data-fallback-kind="product" />
+                    </div>
+                    <span class="secondary" style="font-size: 12px">{{ product.shopName }}</span>
+                  </a>
+                  <span class="muted" style="font-size: 11.5px">· Cập nhật {{ formatRelative(product.capturedAt) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align: right">
+              <div class="muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em">Giá hiện tại</div>
+              <div style="font-size: 26px; font-weight: 750; color: var(--positive); letter-spacing: -0.03em">
+                {{ formatCurrency(product.price) }}
+              </div>
+              <span :class="growthClass(product.growthRate)" class="pill" style="margin-top: 6px">
+                {{ growthIcon(product.growthRate) }} {{ formatPercent(product.growthRate, { sign: true }) }} tăng trưởng
+              </span>
+            </div>
+          </div>
+
+          <hr class="divider" style="margin: 20px 0" />
+
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px">
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Đã bán</div>
+              <div class="kpi-value" style="font-size: 21px">{{ formatNumber(product.sales) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">GMV ước tính</div>
+              <div class="kpi-value" style="font-size: 21px; color: var(--positive)">{{ formatCurrency(product.gmv, { compact: true }) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Lượt xem</div>
+              <div class="kpi-value" style="font-size: 21px; color: var(--accent-3)">{{ formatCompact(product.views) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Lượt thích</div>
+              <div class="kpi-value" style="font-size: 21px; color: var(--accent)">{{ formatCompact(product.likes) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Chia sẻ</div>
+              <div class="kpi-value" style="font-size: 21px">{{ formatCompact(product.shares) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Bình luận</div>
+              <div class="kpi-value" style="font-size: 21px">{{ formatCompact(product.comments) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Người bán</div>
+              <div class="kpi-value" style="font-size: 21px">{{ formatNumber(product.sellerCount) }}</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Biến thể / SKU</div>
+              <div class="kpi-value" style="font-size: 21px">{{ formatNumber(product.variantCount) }}</div>
+            </div>
+          </div>
+
+          <div v-if="product.minPrice !== null && product.maxPrice !== null" class="glass-soft panel-tight" style="margin-top: 14px">
+            <div class="row-between" style="gap: 12px; flex-wrap: wrap">
+              <div>
+                <div class="kpi-label">Dải giá biến thể</div>
+                <div class="cell-strong" style="font-size: 15px">
+                  {{ formatCurrency(product.minPrice) }} – {{ formatCurrency(product.maxPrice) }}
+                </div>
+              </div>
+              <span class="muted" style="font-size: 11.5px">{{ product.variantCount }} SKU được ghi nhận</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= MAIN CHART ================= -->
+        <section class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Xu hướng tăng trưởng theo thời gian</h2>
+              <p class="panel-subtitle">Chuỗi dữ liệu {{ rangeLabel }} · đơn vị theo từng metric</p>
+            </div>
+            <div class="segmented" role="group" aria-label="Chọn chỉ số">
+              <button
+                v-for="metric in metrics"
+                :key="metric.key"
+                :class="{ 'is-active': activeMetric === metric.key }"
+                @click="selectMetric(metric.key)"
+              >
+                {{ metric.label }}
+              </button>
+            </div>
+          </div>
+          <div class="chart-frame" style="height: 340px">
+            <canvas ref="mainCanvas" role="img" aria-label="Biểu đồ tăng trưởng sản phẩm"></canvas>
+          </div>
+
+          <hr class="divider" style="margin: 20px 0" />
+
+          <div class="grid grid-3">
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Δ Đã bán (kỳ)</div>
+              <div class="kpi-value" style="font-size: 19px">{{ formatNumber(salesDelta) }}</div>
+              <div class="muted" style="font-size: 11px; margin-top: 4px">
+                Từ {{ formatNumber(firstValue("sales")) }} → {{ formatNumber(lastValue("sales")) }}
+              </div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Δ GMV (kỳ)</div>
+              <div class="kpi-value" style="font-size: 19px; color: var(--positive)">{{ formatCurrency(gmvDelta, { compact: true }) }}</div>
+              <div class="muted" style="font-size: 11px; margin-top: 4px">Tăng trưởng doanh thu ước tính</div>
+            </div>
+            <div class="glass-soft panel-tight">
+              <div class="kpi-label">Tỷ lệ chuyển đổi ước tính</div>
+              <div class="kpi-value" style="font-size: 19px">{{ conversionRate === null ? '—' : conversionRate.toFixed(2) + '%' }}</div>
+              <div class="muted" style="font-size: 11px; margin-top: 4px">Đơn / lượt xem video</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= SECONDARY CHARTS ================= -->
+        <section class="grid grid-2">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Tương tác video</h2>
+                <p class="panel-subtitle">Lượt xem và lượt thích theo ngày</p>
+              </div>
+            </div>
+            <div class="chart-frame is-sm">
+              <canvas ref="engagementCanvas" role="img" aria-label="Biểu đồ tương tác video"></canvas>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Diễn biến giá</h2>
+                <p class="panel-subtitle">Giá niêm yết ghi nhận qua các phiên cào</p>
+              </div>
+            </div>
+            <div class="chart-frame is-sm">
+              <canvas ref="priceCanvas" role="img" aria-label="Biểu đồ diễn biến giá"></canvas>
+            </div>
+          </article>
+        </section>
+
+        <!-- ================= SHOP LIST ================= -->
+        <section class="glass panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Nhà bán hàng đang niêm yết</h2>
+              <p class="panel-subtitle">{{ product.shops.length }} liên kết sản phẩm – shop</p>
+            </div>
+          </div>
+
+          <div v-if="product.shops.length === 0" class="state" style="padding: 28px 12px">
+            <span>Chưa ghi nhận nhà bán hàng cho sản phẩm này.</span>
+          </div>
+
+          <div v-else class="stack" style="gap: 10px">
+            <div
+              v-for="shop in product.shops"
+              :key="shop.productShopId"
+              class="glass-soft panel-tight row-between"
+              style="gap: 14px"
+            >
+              <div class="row" style="gap: 12px; min-width: 0">
+                <div class="avatar avatar-lg">
+                  <img :src="shop.avatarUrl" :alt="shop.name" loading="lazy" data-fallback-kind="avatar" />
+                </div>
+                <div style="min-width: 0">
+                  <div class="cell-strong truncate">{{ shop.name }}</div>
+                  <div class="muted mono" style="font-size: 11px">
+                    {{ shop.username ? "@" + shop.username : "—" }}
+                    <span v-if="shop.isActive" style="color: var(--positive)"> · đang hoạt động</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row" style="gap: 22px; flex-wrap: wrap">
+                <div style="text-align: right">
+                  <div class="muted" style="font-size: 10.5px">Giá</div>
+                  <div class="cell-strong num">{{ formatCurrency(shop.price) }}</div>
+                </div>
+                <div style="text-align: right">
+                  <div class="muted" style="font-size: 10.5px">Đã bán</div>
+                  <div class="cell-strong num">{{ formatNumber(shop.sales) }}</div>
+                </div>
+                <div style="text-align: right">
+                  <div class="muted" style="font-size: 10.5px">GMV</div>
+                  <div class="num" style="color: var(--positive); font-weight: 600">{{ formatCurrency(shop.gmv, { compact: true }) }}</div>
+                </div>
+                <a class="btn btn-sm" :href="`/shop-detail.html?id=${shop.shopId}`">Xem shop</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TREND VIDEO + TOP CREATORS ================= -->
+        <section class="grid grid-2">
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Video xu hướng hot nhất</h2>
+                <p class="panel-subtitle">Video có lượt xem cao nhất gắn với sản phẩm này</p>
+              </div>
+            </div>
+
+            <div v-if="!product.topTrendVideo" class="state" style="padding: 32px 12px">
+              <span>Chưa ghi nhận video xu hướng cho sản phẩm này.</span>
+            </div>
+
+            <div v-else class="stack" style="gap: 12px">
+              <component
+                :is="product.topTrendVideo.videoUrl ? 'a' : 'div'"
+                class="glass-soft panel-tight link-reset"
+                :href="product.topTrendVideo.videoUrl || undefined"
+                :target="product.topTrendVideo.videoUrl ? '_blank' : undefined"
+                :rel="product.topTrendVideo.videoUrl ? 'noopener noreferrer' : undefined"
+              >
+                <div class="row-between" style="gap: 10px">
+                  <span class="pill pill-accent">Top Trend Video</span>
+                  <span class="mono muted" style="font-size: 11px">{{ formatCompact(product.topTrendVideo.playCount) }} views</span>
+                </div>
+                <p class="cell-strong" style="margin: 10px 0 8px; line-height: 1.5">{{ product.topTrendVideo.content }}</p>
+                <div class="row muted" style="gap: 14px; flex-wrap: wrap; font-size: 11.5px">
+                  <span>♥ {{ formatCompact(product.topTrendVideo.diggCount) }}</span>
+                  <span>💬 {{ formatCompact(product.topTrendVideo.commentCount) }}</span>
+                  <span>Chia sẻ {{ formatCompact(product.topTrendVideo.shareCount) }}</span>
+                  <span>Engagement {{ formatPercent(product.topTrendVideo.engagementRate) }}</span>
+                  <span v-if="product.topTrendVideo.author">· {{ product.topTrendVideo.author }}</span>
+                </div>
+              </component>
+
+              <div v-if="product.trendVideos.length > 1" class="stack" style="gap: 8px">
+                <a
+                  v-for="video in product.trendVideos.slice(1)"
+                  :key="video.id"
+                  class="row-between link-reset glass-soft panel-tight"
+                  :href="video.videoUrl || `/detail.html?id=${product.id}`"
+                  :target="video.videoUrl ? '_blank' : undefined"
+                  style="gap: 10px; font-size: 11.5px"
+                >
+                  <span class="truncate" style="max-width: 65%">{{ video.content }}</span>
+                  <span class="mono muted">{{ formatCompact(video.playCount) }} views</span>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <article class="glass panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Top 10 nhà sáng tạo bán sản phẩm</h2>
+                <p class="panel-subtitle">Creator/Affiliate có GMV đóng góp lớn nhất</p>
+              </div>
+              <a class="btn btn-sm btn-ghost" href="/creators.html">Tất cả</a>
+            </div>
+
+            <div v-if="product.topCreators.length === 0" class="state" style="padding: 32px 12px">
+              <span>Chưa ghi nhận nhà sáng tạo cho sản phẩm này.</span>
+            </div>
+
+            <div v-else class="stack" style="gap: 8px">
+              <a
+                v-for="(creator, index) in product.topCreators"
+                :key="creator.id"
+                class="glass-soft panel-tight row-between link-reset"
+                :href="`/creator.html?id=${creator.id}&range=${rangeKey}`"
+                style="gap: 12px"
+              >
+                <div class="row" style="gap: 10px; min-width: 0">
+                  <span class="rank-badge" :class="{ 'is-top': index < 3 }">{{ index + 1 }}</span>
+                  <div class="avatar">
+                    <img :src="creator.avatarUrl" :alt="creator.displayName" loading="lazy" data-fallback-kind="avatar" />
+                  </div>
+                  <div style="min-width: 0">
+                    <div class="cell-strong truncate">{{ creator.displayName }}</div>
+                    <div class="muted" style="font-size: 10.5px">
+                      {{ formatCompact(creator.followerCount) }} followers · {{ formatPercent(creator.engagementRate) }}
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align: right">
+                  <div class="num" style="color: var(--positive); font-weight: 600">{{ formatCurrency(creator.gmv, { compact: true }) }}</div>
+                  <span class="muted" style="font-size: 10.5px">{{ formatNumber(creator.soldCount) }} đã bán</span>
+                </div>
+              </a>
+            </div>
+          </article>
+        </section>
+
+        <!-- ================= VARIANTS ================= -->
+        <section class="glass panel" v-if="product.variants.length > 0">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Biến thể / SKU</h2>
+              <p class="panel-subtitle">Toàn bộ dải giá, tồn kho theo từng biến thể</p>
+            </div>
+            <span class="pill pill-neutral">{{ product.variants.length }} SKU</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Tên biến thể</th>
+                  <th class="is-numeric">Giá</th>
+                  <th class="is-numeric">Tồn kho</th>
+                  <th>Thuộc tính</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="variant in product.variants" :key="variant.id">
+                  <td class="mono muted" style="font-size: 11px">{{ variant.platformSkuId }}</td>
+                  <td class="cell-strong">{{ variant.name || "—" }}</td>
+                  <td class="is-numeric">{{ variant.price === null ? "—" : formatCurrency(variant.price) }}</td>
+                  <td class="is-numeric">{{ variant.stock === null ? "—" : formatNumber(variant.stock) }}</td>
+                  <td>
+                    <span v-if="!variant.attributes" class="muted">—</span>
+                    <span v-else class="row" style="gap: 6px; flex-wrap: wrap">
+                      <span v-for="(value, key) in variant.attributes" :key="key" class="pill pill-neutral" style="font-size: 10px">
+                        {{ key }}: {{ value }}
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="glass panel" v-if="product.description">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Mô tả sản phẩm</h2>
+            </div>
+          </div>
+          <p class="secondary" style="margin: 0; white-space: pre-wrap; line-height: 1.7">{{ product.description }}</p>
+        </section>
+      </template>
+
+      <div v-else-if="!loading" class="glass panel">
+        <div class="state" style="padding: 64px 16px">
+          <span style="font-size: 26px">📦</span>
+          <strong>Không tìm thấy sản phẩm</strong>
+          <span class="muted">Sản phẩm có thể đã bị xoá hoặc ID không hợp lệ.</span>
+          <a class="btn btn-sm" href="/shop.html">Về danh sách</a>
+        </div>
+      </div>
+
+      <footer class="row-between muted" style="font-size: 11.5px; padding-top: 6px">
+        <span>TikTok E-Commerce Analytics · Phân tích chuyên sâu</span>
+        <span v-if="product">Snapshot gần nhất: {{ formatDate(product.capturedAt, "long") }}</span>
+      </footer>
+    </div>
+
+    <script type="module" src="/js/detail.js?v=ai-product-analysis"></script>
+  </body>
+</html>

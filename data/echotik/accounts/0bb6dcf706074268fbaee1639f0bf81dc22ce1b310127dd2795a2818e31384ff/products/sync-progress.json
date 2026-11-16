@@ -1,0 +1,40 @@
+{
+  "completedPages": [
+    "product-list:1:10",
+    "product-list:2:10",
+    "product-list:3:10",
+    "product-list:4:10",
+    "product-list:5:10",
+    "product-list:6:10",
+    "product-list:7:10",
+    "product-list:8:10",
+    "product-list:9:10",
+    "product-list:10:10",
+    "product-list:11:10",
+    "product-list:12:10",
+    "product-list:13:10",
+    "product-list:14:10",
+    "product-list:15:10"
+  ],
+  "terminalPageKeys": [],
+  "pendingResponses": {},
+  "completedResponses": {
+    "product-list:1:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-1-10-2026-11-06T20-16-02-281Z-dc5808f2-e9ea-40fe-9fb6-704d5009b90f.json",
+    "product-list:2:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-2-10-2026-11-06T20-23-20-338Z-619a925f-48da-4f13-aad0-183bfca6aa03.json",
+    "product-list:3:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-3-10-2026-11-06T20-23-22-165Z-ae7b13d2-4ae5-4b1b-8446-f25cef4b85bd.json",
+    "product-list:4:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-4-10-2026-11-06T20-23-22-836Z-bad38670-7b48-419e-a36e-713494e220b5.json",
+    "product-list:5:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-5-10-2026-11-06T20-23-23-517Z-d155d6b5-08f3-4198-ae88-7f4d155f6f1b.json",
+    "product-list:6:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-6-10-2026-11-06T20-23-23-876Z-0e621a6e-d779-42f9-96b3-2f43ce68afca.json",
+    "product-list:7:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-7-10-2026-11-06T20-23-24-340Z-33914877-dbb9-4459-9894-00f668e6d2bf.json",
+    "product-list:8:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-8-10-2026-11-06T20-23-24-680Z-5e784f8d-45f0-4e55-b118-efa21c4b30e0.json",
+    "product-list:9:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-9-10-2026-11-06T20-23-24-983Z-0c955786-c392-453c-bfd8-2091ef4f39f6.json",
+    "product-list:10:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-10-10-2026-11-06T20-23-25-498Z-cb68a125-ef91-4f91-8669-22e755e4b20f.json",
+    "product-list:11:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-11-10-2026-11-06T20-23-25-895Z-c77b5de7-d925-42b5-b4ac-9a88cd6a8f0e.json",
+    "product-list:12:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-12-10-2026-11-06T20-23-26-207Z-dc35f371-dc3a-40b5-89a6-2fec20269201.json",
+    "product-list:13:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-13-10-2026-11-06T20-23-26-516Z-ce9fe0f4-c601-4e5a-bfe9-b86b2641df10.json",
+    "product-list:14:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-14-10-2026-11-06T20-23-26-814Z-11ea5ff2-3ca3-4430-8747-a1693f2f7d90.json",
+    "product-list:15:10": "D:\\tiktok-scraper-ts\\data\\echotik\\accounts\\0bb6dcf706074268fbaee1639f0bf81dc22ce1b310127dd2795a2818e31384ff\\products\\raw\\product-list-15-10-2026-11-06T20-23-27-110Z-b7eb529f-8b11-4f9a-8589-0ae3aea1b9a6.json"
+  },
+  "pendingWork": [],
+  "updatedAt": "2026-11-06T20:23:27.306Z"
+}
